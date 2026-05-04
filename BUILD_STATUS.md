@@ -1,9 +1,9 @@
 # Crypseal — Build Status
 
-> **Last verified:** 2026-05-04 18:13 CDT
-> **Milestone:** M2 — Policy-Gated Tool Execution ✅ COMPLETE
+> **Last verified:** 2026-05-04 18:29 CDT
+> **Milestone:** M3 — Approval Request Spine ✅ COMPLETE
 > **`./gradlew assembleDebug`:** ✅ PASS (exit 0, 157 tasks)
-> **`./gradlew testDebugUnitTest`:** ✅ PASS (exit 0, 34 passed, 0 skipped, 0 failed)
+> **`./gradlew testDebugUnitTest`:** ✅ PASS (exit 0, 43 passed, 0 skipped, 0 failed)
 
 ---
 
@@ -22,42 +22,42 @@
 
 ---
 
-## M2 — Policy-Gated Tool Execution (this pass)
+## M3 — Approval Request Spine (this pass)
 
 ### What changed
 
 | # | Task | Status |
 |---|------|--------|
-| 1 | Un-quarantine `SecurityTestSuite` | ✅ Passing — added `implementation(project(":crypseal-guard"))` to runtime |
-| 2 | Create `PolicyGate` | ✅ Done — evaluates every tool call before execution |
-| 3 | Wire `PolicyGate` into `AgentOrchestrator` | ✅ Done — DENY/ASK/ALLOW flow |
-| 4 | Policy requirements for file tools | ✅ Done — PathSandbox check on path arg |
-| 5 | `RunCommandTool` + `CommandRunner` interface | ✅ Done — `MockCommandRunner` for tests |
-| 6 | Comprehensive M2 tests | ✅ 18 new tests passing |
+| 1 | Approval domain models | ✅ `ApprovalRequest`, `ApprovalResponse`, `ApprovalDecision`, `ApprovalScope`, `ApprovalState` |
+| 2 | `ApprovalCallback` interface | ✅ `AutoApproveCallback`, `AutoDenyCallback`, `RecordingApprovalCallback` |
+| 3 | Wire into `AgentOrchestrator` | ✅ ASK → callback → approve/deny → execute/block |
+| 4 | Wire into `SessionLane` state | ✅ `WAITING_FOR_APPROVAL` ↔ `EXECUTING` transitions |
+| 5 | Approval drift checks | ✅ Command drift + file hash drift |
+| 6 | Comprehensive tests | ✅ 9 new tests passing |
 | 7 | Update `BUILD_STATUS.md` | ✅ This file |
 
-### Files changed in M2
+### Files changed in M3
 
 | File | Change |
 |------|--------|
-| `crypseal-runtime/build.gradle.kts` | Added `implementation(project(":crypseal-guard"))` |
-| `crypseal-runtime/.../gateway/PolicyGate.kt` | **New.** Evaluates tool calls against PathSandbox + CommandClassifier. Returns ALLOW/ASK/DENY with risk level and reason. |
-| `crypseal-runtime/.../gateway/AgentOrchestrator.kt` | Added optional `policyGate` parameter. Wires DENY→blocked message, ASK→APPROVAL_REQUEST event, ALLOW→execute. |
-| `crypseal-runtime/.../tools/CommandRunner.kt` | **New.** `CommandRunner` interface + `MockCommandRunner` + `CommandOutput` data class. |
-| `crypseal-runtime/.../tools/RunCommandTool.kt` | **New.** Tool that accepts `{"cmd":"..."}` and delegates to `CommandRunner`. |
-| `crypseal-guard/.../CommandClassifier.kt` | Fixed deny pattern regexes — removed `$` anchors that failed with `containsMatchIn`, added `rm -rf .`, `curl...\|bash` patterns. |
-| `crypseal-runtime/.../release/SecurityTestSuite.kt` | Un-quarantined. Uses temp dirs for platform-agnostic testing. |
-| `crypseal-runtime/.../gateway/PolicyGateTest.kt` | **New.** 18 tests covering safe reads, traversal denial, protected path denial, safe commands, destructive command blocks, inline eval ASK behavior, orchestrator integration with policy gate. |
+| `crypseal-runtime/.../gateway/ApprovalModels.kt` | **New.** `ApprovalRequest` with binding fields (command, file path, file hash), `ApprovalResponse`, `ApprovalDecision`, `ApprovalScope`, `ApprovalState`. |
+| `crypseal-runtime/.../gateway/ApprovalCallback.kt` | **New.** `ApprovalCallback` interface + `AutoApproveCallback`, `AutoDenyCallback`, `RecordingApprovalCallback`. |
+| `crypseal-runtime/.../gateway/ApprovalDriftChecker.kt` | **New.** Binds approval to command string and file SHA-256 hash. Detects command drift and file modification drift before execution. |
+| `crypseal-runtime/.../gateway/AgentOrchestrator.kt` | Added `approvalCallback`, `sessionLane`, `projectRoot` params. ASK path: builds bound request → sets lane state → calls callback → checks drift → executes or blocks. |
+| `crypseal-runtime/.../gateway/SessionLane.kt` | Added `setWaitingForApproval()` and `setExecuting()` for orchestrator-driven state transitions. |
+| `crypseal-runtime/.../gateway/ApprovalFlowTest.kt` | **New.** 9 tests covering full approval lifecycle. |
 
 ### Key design decisions
 
-1. **`PolicyGate` is optional in orchestrator.** Backward-compatible — existing tests without a policy gate still work (M1 tests continue passing). When supplied, it evaluates every tool call between arg parsing and tool execution.
+1. **`ApprovalCallback` is a suspend interface.** This allows the real UI implementation to `suspendCancellableCoroutine` on a user tap without blocking the main thread. Tests use synchronous auto-approve/deny implementations.
 
-2. **DENY vs ASK flow.** `DENY` emits a `TOOL_RESULT` with `"DENIED: ..."` and continues the loop. `ASK` emits an `APPROVAL_REQUEST` event with `"WAITING: ..."` and continues without executing — this is the stub for M3's approval request/response flow.
+2. **Drift binding is done at request creation time.** `ApprovalDriftChecker.bindRequest()` captures the command string and file hash at the moment of the approval request. The checker then compares against current state at execution time, after the callback returns.
 
-3. **`RunCommandTool` delegates to `CommandRunner` interface.** This keeps Termux out of the test path. `MockCommandRunner` lets us verify command dispatch without device access.
+3. **DENY never calls the callback.** The policy gate's DENY verdict is final — no approval is requested. Only ASK verdicts reach the callback. ALLOW verdicts skip the callback entirely.
 
-4. **CommandClassifier hardening.** Removed end-of-line `$` anchors that were silently failing with `containsMatchIn`. Added `rm -rf .` (current dir destruction) and `curl...|bash` patterns.
+4. **`ApprovalScope` is declared but only `ONCE` is implemented.** `SESSION` and `ALWAYS_FOR_PATTERN` scopes are enum values for future milestones but have no behavioral difference in M3.
+
+5. **`policyGate` and `approvalCallback` remain optional.** M1 tests (no policy gate) and M2 tests (no callback) continue to work without changes.
 
 ---
 
@@ -75,15 +75,27 @@
 | Module | Tests Run | Passed | Failed | Skipped | Notes |
 |--------|-----------|--------|--------|---------|-------|
 | `:crypseal-guard` | 3 | 3 | 0 | 0 | PathSandbox, CommandClassifier, ApprovalEngine |
-| `:crypseal-runtime` | 31 | 31 | 0 | 0 | Includes 18 new PolicyGateTest + SecurityTestSuite un-quarantined |
+| `:crypseal-runtime` | 40 | 40 | 0 | 0 | +9 new ApprovalFlowTest |
 | `:crypseal-shell-bridge` | 0 | — | — | — | No test sources |
 | `:ui` | 0 | — | — | — | No test sources |
 | `:app` | 0 | — | — | — | No test sources |
-| **Total** | **34** | **34** | **0** | **0** | |
+| **Total** | **43** | **43** | **0** | **0** | |
+
+### New M3 tests
+
+| Test | Proves |
+|------|--------|
+| `testAskCommandAutoApproveExecutes` | ASK + approved → tool executes with real output |
+| `testAskCommandAutoDenyDoesNotExecute` | ASK + denied → tool does not execute |
+| `testDenyCommandNeverCallsApproval` | DENY → RecordingCallback receives zero requests |
+| `testAllowCommandNoApprovalCall` | ALLOW → RecordingCallback receives zero requests |
+| `testApprovalEventsEmittedInOrder` | APPROVAL_REQUEST emitted before APPROVAL_RESPONSE |
+| `testSessionLaneWaitingState` | Lane state is WAITING_FOR_APPROVAL during callback |
+| `testApprovalDriftBlocksExecution` | File modified after approval → DRIFT_BLOCKED |
+| `testCommandDriftDetection` | Command string changed → drift detected |
+| `cleanUp` | Temp dir cleanup |
 
 ### Quarantined tests: NONE
-
-All previously quarantined tests have been resolved across M1 and M2.
 
 ---
 
@@ -92,32 +104,33 @@ All previously quarantined tests have been resolved across M1 and M2.
 | Track | Name | Build-Clean | Tests Passing | Honest Status |
 |-------|------|-------------|---------------|---------------|
 | 0 | Project foundation | ✅ | ✅ | **DONE** |
-| 1 | Gateway core | ✅ | ✅ | **PARTIAL** — core data layer, events, lanes work; session resume/fork untested |
-| 2 | Termux execution node | ✅ | — | **SCAFFOLD + INTERFACE** — `CommandRunner` interface ready, `MockCommandRunner` proven, real Termux adapter pending |
-| 3 | Tool registry & policy | ✅ | ✅ **18 tests** | **M2 COMPLETE** — PolicyGate wired, PathSandbox + CommandClassifier integrated, denied tools never execute |
-| 4 | File tools & checkpoints | ✅ | ✅ | **PARTIAL** — read+checkpoint+patch tests passing |
-| 5 | Local model runtime | ✅ | ✅ | **PARTIAL** — mock + repair proven; no real inference |
-| 6 | Agent orchestrator | ✅ | ✅ | **M1+M2 COMPLETE** — structured dispatch + policy gate |
+| 1 | Gateway core | ✅ | ✅ | **PARTIAL** — events, lanes, JSONL work; session resume/fork untested |
+| 2 | Termux execution node | ✅ | — | **SCAFFOLD + INTERFACE** — `CommandRunner` interface ready, mock proven |
+| 3 | Tool registry & policy | ✅ | ✅ 18 tests | **M2 COMPLETE** — PolicyGate, PathSandbox, CommandClassifier integrated |
+| 4 | File tools & checkpoints | ✅ | ✅ | **PARTIAL** — read+checkpoint+patch passing |
+| 5 | Local model runtime | ✅ | ✅ | **PARTIAL** — mock + repair proven |
+| 6 | Agent orchestrator | ✅ | ✅ | **M1+M2+M3 COMPLETE** — structured dispatch + policy gate + approval spine |
 | 7 | Repo context/indexing | ❌ | — | **NOT STARTED** |
 | 8 | Skills/subagents/hooks | ✅ | ✅ | **PARTIAL** — loader + hooks proven |
 | 9 | Full UI polish | ✅ | — | **SCAFFOLD ONLY** |
 | 10 | Git/release/lifecycle | ✅ | ✅ | **PARTIAL** — export works |
-| 11 | Security/QA/perf | ✅ | ✅ **SecurityTestSuite** | **M2 COMPLETE** — attack scenarios proven, policy gate tested |
+| 11 | Security/QA/perf | ✅ | ✅ | **M2+M3** — attack scenarios + approval drift proven |
 | 12 | Advanced adapters | ❌ | — | **NOT STARTED** |
 
 ---
 
-## Acceptance criteria checklist — M2
+## Acceptance criteria checklist — M3
 
 - [x] `./gradlew assembleDebug` passes (exit 0)
 - [x] `./gradlew testDebugUnitTest` passes (exit 0)
-- [x] `SecurityTestSuite` is un-quarantined and passing
-- [x] Tool calls are policy-gated before execution
-- [x] Denied tools never execute
-- [x] Safe file reads still work through the orchestrator
-- [x] Mock safe commands can run through the command tool
-- [x] Dangerous commands are blocked by tests
-- [x] No new quarantined tests
+- [x] No quarantined tests
+- [x] ASK tools can be approved and then execute
+- [x] ASK tools can be denied and then do not execute
+- [x] DENY tools never execute and never ask for approval
+- [x] ALLOW tools execute without approval
+- [x] Approval events are persisted into session history
+- [x] Approval drift is tested
+- [x] BUILD_STATUS.md is updated honestly
 
 ---
 
@@ -128,17 +141,19 @@ All previously quarantined tests have been resolved across M1 and M2.
 | M0 | 2026-05-04 17:04 | 0 → 10 pass, 4 skip | Build-clean foundation |
 | M1 | 2026-05-04 17:58 | 10 → 16 pass, 1 skip | Tool dispatch spine |
 | M2 | 2026-05-04 18:13 | 16 → 34 pass, 0 skip | Policy-gated tool execution |
+| M3 | 2026-05-04 18:29 | 34 → 43 pass, 0 skip | Approval request spine |
 
 ---
 
 ## Recommended next milestone
 
-### M3 — Approval Request Spine
+### M4 — Real Termux Diagnostic Spine
 
-1. Implement `ApprovalRequest` / `ApprovalResponse` event flow for `ASK` verdicts
-2. Add `ApprovalCallback` interface that the orchestrator can call to request approval
-3. For tests: provide `AutoApproveCallback` (allows all) and `AutoDenyCallback` (denies all)
-4. Wire approval into the `SessionLane` waiting state
-5. Test that an `ASK` tool call can be approved and then executes
-6. Test that an `ASK` tool call can be denied and then does not execute
-7. Test that approval drift (file changed after approval) blocks re-execution
+1. Detect whether Termux is installed on the device
+2. Detect/check `com.termux.permission.RUN_COMMAND` permission status
+3. Implement `TermuxCommandRunner` (real `CommandRunner` using `RUN_COMMAND` intent)
+4. Run `python --version`, `pwd`, `ls` as smoke tests
+5. Capture stdout/stderr/exit code through `ResultReceiver`
+6. Log `COMMAND_START`, `COMMAND_OUTPUT`, `COMMAND_END` events
+7. Surface diagnostic result in a minimal UI screen
+8. Add mock instrumented tests for intent construction

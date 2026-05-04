@@ -7,6 +7,7 @@ import com.harrowhaus.crypseal.runtime.models.ModelOutputRepair
 import com.harrowhaus.crypseal.runtime.models.ModelResponse
 import com.harrowhaus.crypseal.runtime.tools.ToolArgParser
 import com.harrowhaus.crypseal.runtime.tools.ToolRegistry
+import java.io.File
 
 class AgentOrchestrator(
     private val model: ModelRuntime,
@@ -14,7 +15,10 @@ class AgentOrchestrator(
     private val contextBuilder: ContextBuilder,
     private val outputRepair: ModelOutputRepair,
     private val failureDetector: FailureDetector,
-    private val policyGate: PolicyGate? = null
+    private val policyGate: PolicyGate? = null,
+    private val approvalCallback: ApprovalCallback? = null,
+    private val sessionLane: SessionLane? = null,
+    private val projectRoot: File? = null
 ) {
 
     companion object {
@@ -30,32 +34,20 @@ class AgentOrchestrator(
         for (step in 1..maxSteps) {
             val context = contextBuilder.buildContext(sessionHistory, isPlanMode)
             val rawResponse = model.generateResponse(context)
-
-            // Resolve the effective tool call:
-            // 1. If the model returned structured fields, use them directly.
-            // 2. Otherwise, attempt repair on the raw text.
             val response = resolveResponse(rawResponse)
 
             // Log the model's text as an assistant message
-            sessionHistory.add(CrypsealEvent(
-                sessionId = "active",
-                type = EventType.AGENT_MESSAGE,
-                payload = response.text
-            ))
+            sessionHistory.add(event(EventType.AGENT_MESSAGE, response.text))
 
             val toolName = response.toolCallName
             if (toolName == null) {
-                // No tool call — the model finished its turn
                 return OrchestrationResult(true, "Agent completed autonomous step.")
             }
 
             // ---- Plan Mode gate ----
             if (isPlanMode && isMutatingTool(toolName)) {
-                sessionHistory.add(CrypsealEvent(
-                    sessionId = "active",
-                    type = EventType.TOOL_RESULT,
-                    payload = "Error: Cannot execute mutating tool '$toolName' in PLAN mode."
-                ))
+                sessionHistory.add(event(EventType.TOOL_RESULT,
+                    "Error: Cannot execute mutating tool '$toolName' in PLAN mode."))
                 continue
             }
 
@@ -69,16 +61,8 @@ class AgentOrchestrator(
             val parseResult = ToolArgParser.parse(response.toolCallArgsJson)
             if (!parseResult.success) {
                 failureDetector.recordFailure(toolSignature)
-                sessionHistory.add(CrypsealEvent(
-                    sessionId = "active",
-                    type = EventType.TOOL_CALL,
-                    payload = "{\"tool\":\"$toolName\",\"args\":${response.toolCallArgsJson ?: "{}"}}"
-                ))
-                sessionHistory.add(CrypsealEvent(
-                    sessionId = "active",
-                    type = EventType.TOOL_RESULT,
-                    payload = "Error: ${parseResult.error}"
-                ))
+                sessionHistory.add(event(EventType.TOOL_CALL, toolCallPayload(toolName, response)))
+                sessionHistory.add(event(EventType.TOOL_RESULT, "Error: ${parseResult.error}"))
                 continue
             }
             val args = parseResult.args!!
@@ -88,56 +72,78 @@ class AgentOrchestrator(
                 val verdict = policyGate.evaluate(toolName, args)
                 when (verdict.action) {
                     PolicyAction.DENY -> {
-                        sessionHistory.add(CrypsealEvent(
-                            sessionId = "active",
-                            type = EventType.TOOL_CALL,
-                            payload = "{\"tool\":\"$toolName\",\"args\":${response.toolCallArgsJson ?: "{}"}}"
-                        ))
-                        sessionHistory.add(CrypsealEvent(
-                            sessionId = "active",
-                            type = EventType.TOOL_RESULT,
-                            payload = "DENIED: ${verdict.reason} [${verdict.riskLevel}]"
-                        ))
+                        // DENY: never execute, never ask for approval
+                        sessionHistory.add(event(EventType.TOOL_CALL, toolCallPayload(toolName, response)))
+                        sessionHistory.add(event(EventType.TOOL_RESULT,
+                            "DENIED: ${verdict.reason} [${verdict.riskLevel}]"))
                         failureDetector.recordFailure(toolSignature)
                         continue
                     }
                     PolicyAction.ASK -> {
-                        sessionHistory.add(CrypsealEvent(
+                        // ASK: request approval via callback
+                        sessionHistory.add(event(EventType.TOOL_CALL, toolCallPayload(toolName, response)))
+
+                        val approvalRequest = ApprovalDriftChecker.bindRequest(
                             sessionId = "active",
-                            type = EventType.TOOL_CALL,
-                            payload = "{\"tool\":\"$toolName\",\"args\":${response.toolCallArgsJson ?: "{}"}}"
-                        ))
-                        sessionHistory.add(CrypsealEvent(
-                            sessionId = "active",
-                            type = EventType.APPROVAL_REQUEST,
-                            payload = "WAITING: ${verdict.reason} [${verdict.riskLevel}]"
-                        ))
-                        // For now, treat ASK as a soft block — do not execute
-                        // Future M3 will add the approval request/response flow
-                        continue
+                            toolName = toolName,
+                            args = args,
+                            verdict = verdict,
+                            projectRoot = projectRoot
+                        )
+
+                        sessionHistory.add(event(EventType.APPROVAL_REQUEST,
+                            "WAITING: ${verdict.reason} [${verdict.riskLevel}] (requestId=${approvalRequest.requestId})"))
+
+                        if (approvalCallback == null) {
+                            // No callback — cannot proceed, skip tool
+                            continue
+                        }
+
+                        // Transition lane state
+                        sessionLane?.setWaitingForApproval()
+
+                        val approvalResponse = approvalCallback.requestApproval(approvalRequest)
+
+                        // Restore lane state
+                        sessionLane?.setExecuting()
+
+                        // Emit approval response event
+                        sessionHistory.add(event(EventType.APPROVAL_RESPONSE,
+                            "${approvalResponse.decision}: requestId=${approvalResponse.requestId}" +
+                            (if (approvalResponse.userNote != null) " note=${approvalResponse.userNote}" else "")))
+
+                        if (approvalResponse.decision == ApprovalDecision.DENY) {
+                            continue
+                        }
+
+                        // Approved — check for drift before executing
+                        val drift = ApprovalDriftChecker.checkDrift(approvalRequest, args, projectRoot)
+                        if (drift != null) {
+                            sessionHistory.add(event(EventType.TOOL_RESULT,
+                                "DRIFT_BLOCKED: $drift"))
+                            failureDetector.recordFailure(toolSignature)
+                            continue
+                        }
+
+                        // Fall through to execution
                     }
                     PolicyAction.ALLOW -> {
-                        // Fall through to execution
+                        // Fall through to execution — no approval needed
                     }
                 }
             }
 
-            // ---- Emit TOOL_CALL event ----
-            sessionHistory.add(CrypsealEvent(
-                sessionId = "active",
-                type = EventType.TOOL_CALL,
-                payload = "{\"tool\":\"$toolName\",\"args\":${response.toolCallArgsJson ?: "{}"}}"
-            ))
+            // ---- Emit TOOL_CALL event (for ALLOW path) ----
+            // Only emit if not already emitted by ASK/DENY paths above
+            if (policyGate == null || policyGate.evaluate(toolName, args).action == PolicyAction.ALLOW) {
+                sessionHistory.add(event(EventType.TOOL_CALL, toolCallPayload(toolName, response)))
+            }
 
             // ---- Resolve tool ----
             val tool = toolRegistry.getTool(toolName)
             if (tool == null) {
                 failureDetector.recordFailure(toolSignature)
-                sessionHistory.add(CrypsealEvent(
-                    sessionId = "active",
-                    type = EventType.TOOL_RESULT,
-                    payload = "Error: Tool '$toolName' not found."
-                ))
+                sessionHistory.add(event(EventType.TOOL_RESULT, "Error: Tool '$toolName' not found."))
                 continue
             }
 
@@ -151,26 +157,16 @@ class AgentOrchestrator(
                 failureDetector.recordFailure(toolSignature)
             }
 
-            sessionHistory.add(CrypsealEvent(
-                sessionId = "active",
-                type = EventType.TOOL_RESULT,
-                payload = if (toolResult.success) toolResult.output
-                          else "Error: ${toolResult.error ?: toolResult.output}"
-            ))
+            sessionHistory.add(event(EventType.TOOL_RESULT,
+                if (toolResult.success) toolResult.output
+                else "Error: ${toolResult.error ?: toolResult.output}"))
         }
 
         return OrchestrationResult(false, "Max steps reached.")
     }
 
-    /**
-     * If the model already returned structured tool call fields, use them.
-     * Otherwise fall back to text-based repair as a last resort.
-     */
     private fun resolveResponse(raw: ModelResponse): ModelResponse {
-        if (raw.toolCallName != null) {
-            return raw
-        }
-        // Only attempt repair if the text looks like it might contain a tool call
+        if (raw.toolCallName != null) return raw
         val text = raw.text
         if (text.contains("\"tool\"") || text.contains("\"name\"") || text.contains("{")) {
             return outputRepair.repairToolCall(text)
@@ -178,9 +174,14 @@ class AgentOrchestrator(
         return raw
     }
 
-    private fun isMutatingTool(name: String): Boolean {
-        return name in MUTATING_TOOLS
-    }
+    private fun isMutatingTool(name: String): Boolean = name in MUTATING_TOOLS
+
+    private fun event(type: EventType, payload: String) = CrypsealEvent(
+        sessionId = "active", type = type, payload = payload
+    )
+
+    private fun toolCallPayload(toolName: String, response: ModelResponse): String =
+        "{\"tool\":\"$toolName\",\"args\":${response.toolCallArgsJson ?: "{}"}}"
 }
 
 data class OrchestrationResult(

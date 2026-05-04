@@ -42,6 +42,16 @@ class SessionLane(
         }
     }
 
+    /** Transition to WAITING_FOR_APPROVAL when the orchestrator needs user input. */
+    fun setWaitingForApproval() {
+        _laneState.value = LaneState.WAITING_FOR_APPROVAL
+    }
+
+    /** Transition back to EXECUTING after approval decision is received. */
+    fun setExecuting() {
+        _laneState.value = LaneState.EXECUTING
+    }
+
     fun emitEvent(type: EventType, payload: String) {
         val event = CrypsealEvent(
             sessionId = sessionId,
