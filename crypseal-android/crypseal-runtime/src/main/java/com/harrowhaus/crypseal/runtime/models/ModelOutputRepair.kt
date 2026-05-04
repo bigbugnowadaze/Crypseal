@@ -31,8 +31,8 @@ class ModelOutputRepair {
 
         // Simple regex extraction for tool call parsing (usually done via Gson/Moshi)
         // Here we simulate successful parsing vs failure
-        val hasName = clean.contains(""name"") || clean.contains(""tool"")
-        val hasArgs = clean.contains(""args"") || clean.contains(""arguments"")
+        val hasName = clean.contains("\"name\"") || clean.contains("\"tool\"")
+        val hasArgs = clean.contains("\"args\"") || clean.contains("\"arguments\"")
 
         if (hasName && hasArgs) {
             // Extracted

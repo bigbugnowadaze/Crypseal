@@ -20,7 +20,7 @@ class EpicDTest {
     }
 
     @Test
-    fun testFileReadAndTruncate() = runBlocking {
+    fun testFileReadAndTruncate(): Unit = runBlocking {
         val tempDir = Files.createTempDirectory("crypseal_test").toFile()
         val testFile = File(tempDir, "test.txt")
         val lines = (1..1000).joinToString("\n") { "Line $it" }
@@ -39,7 +39,7 @@ class EpicDTest {
     }
 
     @Test
-    fun testCheckpointRevert() = runBlocking {
+    fun testCheckpointRevert(): Unit = runBlocking {
         val tempDir = Files.createTempDirectory("crypseal_test").toFile()
         val cpDir = File(tempDir, "checkpoints")
         val target = File(tempDir, "target.kt")

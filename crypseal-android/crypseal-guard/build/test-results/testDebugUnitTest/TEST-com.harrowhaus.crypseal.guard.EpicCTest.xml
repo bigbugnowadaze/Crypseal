@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.harrowhaus.crypseal.guard.EpicCTest" tests="3" skipped="1" failures="0" errors="0" timestamp="2026-05-04T21:20:34" hostname="TEETH" time="0.105">
+  <properties/>
+  <testcase name="testPathSandbox" classname="com.harrowhaus.crypseal.guard.EpicCTest" time="0.003">
+    <skipped/>
+  </testcase>
+  <testcase name="testApprovalDrift" classname="com.harrowhaus.crypseal.guard.EpicCTest" time="0.064"/>
+  <testcase name="testCommandClassifier" classname="com.harrowhaus.crypseal.guard.EpicCTest" time="0.036"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -7,7 +7,7 @@ import org.junit.Test
 class EpicETest {
 
     @Test
-    fun testMockRuntimeDeterministic() = runBlocking {
+    fun testMockRuntimeDeterministic(): Unit = runBlocking {
         val canned = listOf(
             ModelResponse("First response", "toolA", "{}"),
             ModelResponse("Second response", "toolB", "{}")

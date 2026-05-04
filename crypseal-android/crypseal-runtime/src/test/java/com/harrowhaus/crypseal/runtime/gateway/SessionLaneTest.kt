@@ -14,7 +14,7 @@ import java.nio.file.Files
 class SessionLaneTest {
 
     @Test
-    fun testSerializationAndInterrupt() = runBlocking {
+    fun testSerializationAndInterrupt(): Unit = runBlocking {
         val tempDir = Files.createTempDirectory("crypseal_events").toFile()
         val writer = JsonlEventWriter(tempDir)
         val lane = SessionLane("test-session", writer)

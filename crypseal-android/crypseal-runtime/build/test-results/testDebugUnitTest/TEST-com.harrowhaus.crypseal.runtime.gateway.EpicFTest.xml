@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.harrowhaus.crypseal.runtime.gateway.EpicFTest" tests="2" skipped="1" failures="0" errors="0" timestamp="2026-05-04T22:03:58" hostname="TEETH" time="0.03">
+  <properties/>
+  <testcase name="testAgentOrchestratorPlanMode" classname="com.harrowhaus.crypseal.runtime.gateway.EpicFTest" time="0.005">
+    <skipped/>
+  </testcase>
+  <testcase name="testFailureDetectorLoop" classname="com.harrowhaus.crypseal.runtime.gateway.EpicFTest" time="0.023"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

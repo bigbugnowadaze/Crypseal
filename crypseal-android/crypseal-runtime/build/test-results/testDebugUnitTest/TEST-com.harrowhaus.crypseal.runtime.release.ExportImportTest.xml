@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.harrowhaus.crypseal.runtime.release.ExportImportTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-05-04T22:03:59" hostname="TEETH" time="0.065">
+  <properties/>
+  <testcase name="testProjectExport" classname="com.harrowhaus.crypseal.runtime.release.ExportImportTest" time="0.065"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,13 @@
+# Build outputs
+**/build/
+.gradle/
+local.properties
+build_err.txt
+
+# IDE
+.idea/
+*.iml
+
+# Python scaffolding scripts (can be regenerated)
+implement_*.py
+scaffold_android.py
