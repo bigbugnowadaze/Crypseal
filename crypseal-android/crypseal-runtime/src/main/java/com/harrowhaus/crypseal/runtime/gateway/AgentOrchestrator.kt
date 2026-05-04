@@ -3,6 +3,8 @@ package com.harrowhaus.crypseal.runtime.gateway
 import com.harrowhaus.crypseal.runtime.context.ContextBuilder
 import com.harrowhaus.crypseal.runtime.models.ModelRuntime
 import com.harrowhaus.crypseal.runtime.models.ModelOutputRepair
+import com.harrowhaus.crypseal.runtime.models.ModelResponse
+import com.harrowhaus.crypseal.runtime.tools.ToolArgParser
 import com.harrowhaus.crypseal.runtime.tools.ToolRegistry
 
 class AgentOrchestrator(
@@ -13,78 +15,124 @@ class AgentOrchestrator(
     private val failureDetector: FailureDetector
 ) {
 
+    companion object {
+        private val MUTATING_TOOLS = setOf("apply_patch", "run_command", "git_commit")
+    }
+
     suspend fun runActLoop(
-        sessionHistory: MutableList<CrypsealEvent>, 
+        sessionHistory: MutableList<CrypsealEvent>,
         maxSteps: Int = 10,
         isPlanMode: Boolean = false
     ): OrchestrationResult {
-        
+
         for (step in 1..maxSteps) {
             val context = contextBuilder.buildContext(sessionHistory, isPlanMode)
             val rawResponse = model.generateResponse(context)
-            val response = outputRepair.repairToolCall(rawResponse.text) // or rawResponse directly
-            
-            // Log model message
+
+            // Resolve the effective tool call:
+            // 1. If the model returned structured fields, use them directly.
+            // 2. Otherwise, attempt repair on the raw text.
+            val response = resolveResponse(rawResponse)
+
+            // Log the model's text as an assistant message
             sessionHistory.add(CrypsealEvent(
-                sessionId = "mock",
+                sessionId = "active",
                 type = EventType.AGENT_MESSAGE,
                 payload = response.text
             ))
 
-            if (response.toolCallName != null) {
-                // If Plan Mode, block mutating tools
-                if (isPlanMode && isMutatingTool(response.toolCallName)) {
-                    val rejectEvent = CrypsealEvent(
-                        sessionId = "mock",
-                        type = EventType.TOOL_RESULT,
-                        payload = "Error: Cannot execute mutating tool '${response.toolCallName}' in PLAN mode."
-                    )
-                    sessionHistory.add(rejectEvent)
-                    continue
-                }
-
-                // Check Failure Loop
-                val toolJsonString = "${response.toolCallName}:${response.toolCallArgsJson}"
-                if (failureDetector.isLooping(toolJsonString)) {
-                    return OrchestrationResult(false, "Failure loop detected on tool: ${response.toolCallName}")
-                }
-
-                val tool = toolRegistry.getTool(response.toolCallName)
-                if (tool == null) {
-                    failureDetector.recordFailure(toolJsonString)
-                    sessionHistory.add(CrypsealEvent(
-                        sessionId = "mock",
-                        type = EventType.TOOL_RESULT,
-                        payload = "Error: Tool '${response.toolCallName}' not found."
-                    ))
-                    continue
-                }
-
-                // Execute tool
-                val result = tool.execute(emptyMap()) // Mock empty args parsed from json
-                if (result.success) {
-                    failureDetector.recordSuccess()
-                } else {
-                    failureDetector.recordFailure(toolJsonString)
-                }
-
-                sessionHistory.add(CrypsealEvent(
-                    sessionId = "mock",
-                    type = EventType.TOOL_RESULT,
-                    payload = result.output
-                ))
-            } else {
-                // No tool call means the model stopped acting and is just chatting
+            val toolName = response.toolCallName
+            if (toolName == null) {
+                // No tool call — the model finished its turn
                 return OrchestrationResult(true, "Agent completed autonomous step.")
             }
+
+            // ---- Plan Mode gate ----
+            if (isPlanMode && isMutatingTool(toolName)) {
+                sessionHistory.add(CrypsealEvent(
+                    sessionId = "active",
+                    type = EventType.TOOL_RESULT,
+                    payload = "Error: Cannot execute mutating tool '$toolName' in PLAN mode."
+                ))
+                continue
+            }
+
+            // ---- Failure loop check ----
+            val toolSignature = "$toolName:${response.toolCallArgsJson.orEmpty()}"
+            if (failureDetector.isLooping(toolSignature)) {
+                return OrchestrationResult(false, "Failure loop detected on tool: $toolName")
+            }
+
+            // ---- Emit TOOL_CALL event ----
+            sessionHistory.add(CrypsealEvent(
+                sessionId = "active",
+                type = EventType.TOOL_CALL,
+                payload = "{\"tool\":\"$toolName\",\"args\":${response.toolCallArgsJson ?: "{}"}}"
+            ))
+
+            // ---- Resolve tool ----
+            val tool = toolRegistry.getTool(toolName)
+            if (tool == null) {
+                failureDetector.recordFailure(toolSignature)
+                sessionHistory.add(CrypsealEvent(
+                    sessionId = "active",
+                    type = EventType.TOOL_RESULT,
+                    payload = "Error: Tool '$toolName' not found."
+                ))
+                continue
+            }
+
+            // ---- Parse args ----
+            val parseResult = ToolArgParser.parse(response.toolCallArgsJson)
+            if (!parseResult.success) {
+                failureDetector.recordFailure(toolSignature)
+                sessionHistory.add(CrypsealEvent(
+                    sessionId = "active",
+                    type = EventType.TOOL_RESULT,
+                    payload = "Error: ${parseResult.error}"
+                ))
+                continue
+            }
+
+            // ---- Execute tool with real parsed args ----
+            val toolResult = tool.execute(parseResult.args!!)
+
+            // ---- Record outcome ----
+            if (toolResult.success) {
+                failureDetector.recordSuccess()
+            } else {
+                failureDetector.recordFailure(toolSignature)
+            }
+
+            sessionHistory.add(CrypsealEvent(
+                sessionId = "active",
+                type = EventType.TOOL_RESULT,
+                payload = if (toolResult.success) toolResult.output
+                          else "Error: ${toolResult.error ?: toolResult.output}"
+            ))
         }
-        
+
         return OrchestrationResult(false, "Max steps reached.")
     }
 
+    /**
+     * If the model already returned structured tool call fields, use them.
+     * Otherwise fall back to text-based repair as a last resort.
+     */
+    private fun resolveResponse(raw: ModelResponse): ModelResponse {
+        if (raw.toolCallName != null) {
+            return raw
+        }
+        // Only attempt repair if the text looks like it might contain a tool call
+        val text = raw.text
+        if (text.contains("\"tool\"") || text.contains("\"name\"") || text.contains("{")) {
+            return outputRepair.repairToolCall(text)
+        }
+        return raw
+    }
+
     private fun isMutatingTool(name: String): Boolean {
-        // Mock hardcoded list for Plan mode
-        return name in listOf("apply_patch", "run_command", "git_commit")
+        return name in MUTATING_TOOLS
     }
 }
 

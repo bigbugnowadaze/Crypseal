@@ -1,8 +1,9 @@
 # Crypseal — Build Status
 
-> **Last verified:** 2026-05-04 17:04 CDT
+> **Last verified:** 2026-05-04 17:58 CDT
+> **Milestone:** M1 — Tool Dispatch Spine ✅ COMPLETE
 > **`./gradlew assembleDebug`:** ✅ PASS (exit 0, 157 tasks)
-> **`./gradlew testDebugUnitTest`:** ✅ PASS (exit 0, 11 passed, 3 skipped/quarantined)
+> **`./gradlew testDebugUnitTest`:** ✅ PASS (exit 0, 16 passed, 1 skipped, 0 failed)
 
 ---
 
@@ -21,49 +22,44 @@
 
 ---
 
-## Errors encountered and fixed during this pass
+## M1 — Tool Dispatch Spine (this pass)
 
-| # | Error | Root Cause | Fix |
-|---|-------|-----------|-----|
-| 1 | `fatal: not a git repository` | No git init | `git init` |
-| 2 | `java.lang.IllegalArgumentException: 25.0.2` | System JDK 25 too new for Kotlin 1.9 | Set `org.gradle.java.home` to Android Studio JBR (JDK 21) in `gradle.properties` |
-| 3 | `SDK location not found` | No `local.properties` | Created `local.properties` with `sdk.dir` |
-| 4 | `AAPT: resource mipmap/ic_launcher not found` | No launcher icon resources | Replaced with `@android:drawable/sym_def_app_icon` |
-| 5 | `Unresolved reference: name` / `Unsupported literal prefixes` in `ModelOutputRepair.kt` | Broken Unicode smart-quotes instead of escaped ASCII quotes | Replaced with `\"name\"` using proper Kotlin escaping |
-| 6 | `ExperimentalMaterial3Api` error in `ProjectScreen.kt` | `TopAppBar` is experimental in Material3 | Added `@OptIn(ExperimentalMaterial3Api::class)` |
-| 7 | `JdkImageTransform` / `ModuleTarget is malformed: platformString missing delimiter: android` | AGP 8.2.0 incompatible with JDK 21 jlink | Upgraded AGP to 8.4.0 |
-| 8 | Missing Room/Coroutines/JUnit/Compose dependencies | Module `build.gradle.kts` files had no `dependencies {}` blocks | Added Room+KSP, coroutines, JUnit, Compose BOM to respective modules |
-| 9 | Missing Termux permission | `AndroidManifest.xml` lacked `com.termux.permission.RUN_COMMAND` | Added `<uses-permission>` |
-| 10 | `SecurityTestSuite` imports `:crypseal-guard` types | Cross-module test dependency not declared | Quarantined with `@Ignore` |
-| 11 | `GoldenPathDemoTest` assumptions about orchestrator API | Orchestrator re-parses text through `repairToolCall`, losing structured tool calls | Quarantined with `@Ignore` |
-| 12 | `Method should be void` on `runBlocking` tests | JUnit 4 requires `@Test fun` to return `Unit`, but `= runBlocking { ... }` can infer non-Unit | Changed signatures to `: Unit = runBlocking { }` |
-| 13 | `testAgentOrchestratorPlanMode` assertion failure | Orchestrator calls `repairToolCall(rawResponse.text)` instead of forwarding `ModelResponse` directly, so mock structured tool calls are discarded | Quarantined with `@Ignore` |
-| 14 | `testPathSandbox` assertion failure | Test uses Linux paths (`/home/user/project`), fails on Windows host | Quarantined with `@Ignore` |
+### What changed
 
----
+| # | Task | Status |
+|---|------|--------|
+| 1 | Fix `AgentOrchestrator.runActLoop` to use structured `ModelResponse` directly | ✅ Done |
+| 2 | Add JSON argument parser (`ToolArgParser`) | ✅ Done |
+| 3 | Fix tool result flow (emit `TOOL_CALL` + `TOOL_RESULT` events) | ✅ Done |
+| 4 | Fix Plan Mode to block mutating tools cleanly | ✅ Done |
+| 5 | Un-quarantine `EpicFTest.testAgentOrchestratorPlanMode` | ✅ Passing |
+| 6 | Un-quarantine `GoldenPathDemoTest.testPythonEndToEndGoldenPath` | ✅ Passing |
+| 7 | Fix `PathSandbox` for platform-agnostic operation | ✅ Done |
+| 8 | Un-quarantine `EpicCTest.testPathSandbox` | ✅ Passing |
 
-## Files changed
+### Files changed in M1
 
 | File | Change |
 |------|--------|
-| `build.gradle.kts` (root) | AGP 8.2.0 → 8.4.0 |
-| `gradle.properties` | Added `org.gradle.java.home` pointing to Android Studio JBR |
-| `local.properties` | Created — `sdk.dir` |
-| `gradlew`, `gradlew.bat`, `gradle/wrapper/*` | Added Gradle wrapper |
-| `app/src/main/AndroidManifest.xml` | Added `com.termux.permission.RUN_COMMAND`; replaced missing mipmap icons with android defaults |
-| `crypseal-runtime/build.gradle.kts` | Added KSP plugin, Room, Coroutines, JUnit dependencies |
-| `crypseal-shell-bridge/build.gradle.kts` | Added Core-ktx, Coroutines dependencies |
-| `crypseal-guard/build.gradle.kts` | Added JUnit dependency |
-| `ui/build.gradle.kts` | Added Compose `buildFeatures`, Compose BOM, Material3, Core-ktx dependencies |
-| `ui/.../ProjectScreen.kt` | Added `@OptIn(ExperimentalMaterial3Api::class)` |
-| `crypseal-runtime/.../ModelOutputRepair.kt` | Fixed broken Unicode quote escaping |
-| `crypseal-runtime/.../release/SecurityTestSuite.kt` | Quarantined — cross-module dependency |
-| `crypseal-runtime/.../release/GoldenPathDemoTest.kt` | Quarantined — orchestrator can't parse args |
-| `crypseal-runtime/.../gateway/EpicFTest.kt` | Fixed `runBlocking` return type; quarantined plan-mode test |
-| `crypseal-runtime/.../gateway/SessionLaneTest.kt` | Fixed `runBlocking` return type |
-| `crypseal-runtime/.../tools/EpicDTest.kt` | Fixed `runBlocking` return type |
-| `crypseal-runtime/.../models/EpicETest.kt` | Fixed `runBlocking` return type |
-| `crypseal-guard/.../EpicCTest.kt` | Quarantined `testPathSandbox` (Windows path issue) |
+| `crypseal-runtime/.../gateway/AgentOrchestrator.kt` | Rewritten: uses `ModelResponse` directly, falls back to repair only when structured fields missing. Parses args via `ToolArgParser`. Emits `TOOL_CALL` + `TOOL_RESULT` events. Proper plan-mode gate. |
+| `crypseal-runtime/.../tools/ToolArgParser.kt` | **New.** JSON→`Map<String, Any>` parser using Android's built-in `org.json`. Supports strings, numbers, booleans, nested objects, arrays. Returns safe error on malformed input. |
+| `crypseal-runtime/build.gradle.kts` | Added `testImplementation("org.json:json:20231013")` for JVM unit test classpath. |
+| `crypseal-guard/.../PathSandbox.kt` | Rewritten: uses `canonicalFile` instead of `normalize()` for cross-platform path resolution. Normalizes separators to `/` before regex matching. |
+| `crypseal-guard/.../EpicCTest.kt` | Un-quarantined `testPathSandbox`: now uses temp directories instead of hardcoded Linux paths. |
+| `crypseal-runtime/.../gateway/EpicFTest.kt` | Un-quarantined `testAgentOrchestratorPlanMode`. |
+| `crypseal-runtime/.../release/GoldenPathDemoTest.kt` | Rewritten as realistic golden-path test: model calls `read_file` with parsed args `{"path":"main.py"}`, file content appears in `TOOL_RESULT` event, model finishes cleanly. |
+
+### Key design decisions
+
+1. **`resolveResponse()` fallback strategy:** The orchestrator uses structured `ModelResponse.toolCallName` / `toolCallArgsJson` when present. Only falls back to `ModelOutputRepair.repairToolCall(text)` when structured fields are null AND the text contains JSON-like markers (`"tool"`, `"name"`, `{`). This ensures mock runtimes work deterministically while still supporting sloppy real model output.
+
+2. **`ToolArgParser` uses `org.json`:** Android ships `org.json` as part of the framework, so no new runtime dependency. We only add it as `testImplementation` for JVM unit tests. No kotlinx.serialization needed.
+
+3. **Event flow per tool call:** Each tool dispatch now emits two events in sequence:
+   - `TOOL_CALL` with `{"tool":"name","args":{...}}`
+   - `TOOL_RESULT` with success output or prefixed `Error: ...`
+
+4. **PathSandbox uses `canonicalFile`:** This resolves symlinks and `..` sequences correctly on both Windows (`C:\`) and Unix (`/`) without path separator assumptions.
 
 ---
 
@@ -80,54 +76,67 @@
 
 | Module | Tests Run | Passed | Failed | Skipped | Notes |
 |--------|-----------|--------|--------|---------|-------|
-| `:crypseal-guard` | 3 | 2 | 0 | 1 | `testPathSandbox` quarantined (Linux paths on Windows host) |
-| `:crypseal-runtime` | 11 | 8 | 0 | 3 | `SecurityTestSuite`, `GoldenPathDemoTest`, `testAgentOrchestratorPlanMode` quarantined |
+| `:crypseal-guard` | 3 | 3 | 0 | 0 | All passing — `testPathSandbox` un-quarantined ✅ |
+| `:crypseal-runtime` | 14 | 13 | 0 | 1 | `SecurityTestSuite` remains quarantined (cross-module import) |
 | `:crypseal-shell-bridge` | 0 | — | — | — | No test sources |
 | `:ui` | 0 | — | — | — | No test sources |
 | `:app` | 0 | — | — | — | No test sources |
-| **Total** | **14** | **10** | **0** | **4** | |
+| **Total** | **17** | **16** | **0** | **1** | |
+
+### Un-quarantined this pass
+
+| Test | Was | Now | Proof |
+|------|-----|-----|-------|
+| `EpicCTest.testPathSandbox` | `@Ignore` (Linux paths on Windows) | ✅ Passing | Uses temp dirs, platform-agnostic |
+| `EpicFTest.testAgentOrchestratorPlanMode` | `@Ignore` (orchestrator discarded tool calls) | ✅ Passing | Orchestrator uses `ModelResponse` directly |
+| `GoldenPathDemoTest.testPythonEndToEndGoldenPath` | `@Ignore` (orchestrator didn't parse args) | ✅ Passing | Args parsed via `ToolArgParser`, `FileReadTool` receives `{"path":"main.py"}` |
+
+### Remaining quarantined test
+
+| Test | Reason | Promote When |
+|------|--------|-------------|
+| `SecurityTestSuite.testAttackScenarios` | Imports `:crypseal-guard` classes from `:crypseal-runtime` test sources (cross-module dependency not declared) | Move test to an integration-test source set, or add `testImplementation(project(":crypseal-guard"))` to `:crypseal-runtime` |
 
 ---
 
 ## Track status vs. `19_PRODUCTION_ROADMAP.md`
 
-| Track | Name | Scaffold Exists | Build-Clean | Acceptance Demonstrable | Honest Status |
-|-------|------|-----------------|-------------|------------------------|---------------|
-| 0 | Project foundation | ✅ | ✅ | ✅ Builds on AS, package structure matches spec | **DONE** |
-| 1 | Gateway core | ✅ | ✅ | ⚠️ CrypsealEvent, JSONL writer, Room DAOs exist and compile. `SessionLaneTest` passes (serialization + interrupt). Session resume/fork is NOT tested. | **PARTIAL** — core data layer works; lane resume untested |
-| 2 | Termux execution node | ✅ | ✅ | ❌ Setup checker, intent runner, result receiver, process monitor exist but are stubs. `python --version` cannot actually run from these stubs. No bootstrap script. | **SCAFFOLD ONLY** — needs real Android device integration test |
-| 3 | Tool registry & policy | ✅ | ✅ | ⚠️ `ToolRegistry`, `PathSandbox`, `CommandClassifier`, `ApprovalEngine` exist. Classifier + approval-drift tests pass. PathSandbox test quarantined for cross-platform path issue. | **PARTIAL** — classifier proven, sandbox needs platform fix |
-| 4 | File tools & checkpoints | ✅ | ✅ | ✅ `FileReadTool` truncation test passes. `CheckpointManager` + `PatchApplyTool` revert test passes. Diff UI exists as Compose stub. | **PARTIAL** — read+checkpoint work; patch applies by overwrite, not real diff |
-| 5 | Local model runtime | ✅ | ✅ | ⚠️ `ModelRuntime` interface, `MockModelRuntime`, `ModelOutputRepair` exist. Mock deterministic playback test passes. Repair test passes. LiteRT/llama stubs compile but do nothing. | **PARTIAL** — mock + repair proven; no real inference |
-| 6 | Agent orchestrator | ✅ | ✅ | ⚠️ `AgentOrchestrator` compiles. `FailureDetector` loop-trap test passes. Plan-mode test quarantined because orchestrator discards structured tool calls during repair pipeline. | **PARTIAL** — failure detection works; tool-arg parsing broken |
-| 7 | Repo context/indexing | ❌ | — | ❌ Not started | **NOT STARTED** |
-| 8 | Skills/subagents/hooks | ✅ | ✅ | ✅ `SkillsLoader` override test passes. `HookEngine` block test passes. `SubagentRunner` stub exists. | **PARTIAL** — loader + hooks proven; subagent is stub |
-| 9 | Full UI polish | ✅ | ✅ | ⚠️ `ProjectScreen`, `ToolCard`, `DiffViewer`, `SettingsScreen`, `CrypsealNotificationManager` compile. No data binding, no integration with live events. | **SCAFFOLD ONLY** — Compose shells, no wiring |
-| 10 | Git/release/lifecycle | ✅ | ✅ | ⚠️ `GitStatusTool` stub, `ProjectExporter` (zip) exist. Export test passes. | **PARTIAL** — export works; git tools are mock stubs |
-| 11 | Security/QA/perf | ✅ | ✅ | ❌ `SecurityTestSuite` quarantined (cross-module). No thermal/crash/redaction testing. | **SCAFFOLD ONLY** |
-| 12 | Advanced adapters | ❌ | — | ❌ Not started | **NOT STARTED** |
+| Track | Name | Build-Clean | Tests Passing | Honest Status |
+|-------|------|-------------|---------------|---------------|
+| 0 | Project foundation | ✅ | ✅ | **DONE** |
+| 1 | Gateway core | ✅ | ✅ SessionLane, JSONL writer, event model | **PARTIAL** — core data layer works; session resume/fork untested |
+| 2 | Termux execution node | ✅ | — | **SCAFFOLD ONLY** — stubs compile, no device integration |
+| 3 | Tool registry & policy | ✅ | ✅ PathSandbox, CommandClassifier, ApprovalEngine | **PARTIAL** — all 3 tests passing. SecurityTestSuite needs cross-module wiring |
+| 4 | File tools & checkpoints | ✅ | ✅ FileReadTool, CheckpointManager, PatchApplyTool | **PARTIAL** — read+checkpoint+patch tests passing; patch is overwrite, not real diff |
+| 5 | Local model runtime | ✅ | ✅ MockModelRuntime, ModelOutputRepair | **PARTIAL** — mock + repair proven; no real inference |
+| 6 | Agent orchestrator | ✅ | ✅ **FailureDetector, PlanMode, GoldenPath** | **M1 COMPLETE** — structured dispatch working, args parsed, tool results captured |
+| 7 | Repo context/indexing | ❌ | — | **NOT STARTED** |
+| 8 | Skills/subagents/hooks | ✅ | ✅ SkillsLoader, HookEngine | **PARTIAL** — loader + hooks proven; subagent is stub |
+| 9 | Full UI polish | ✅ | — | **SCAFFOLD ONLY** |
+| 10 | Git/release/lifecycle | ✅ | ✅ ProjectExporter | **PARTIAL** — export works; git tools are stubs |
+| 11 | Security/QA/perf | ✅ | ⚠️ | **SCAFFOLD ONLY** — SecurityTestSuite quarantined |
+| 12 | Advanced adapters | ❌ | — | **NOT STARTED** |
 
 ---
 
-## Quarantined tests — reasons and promotion criteria
+## Acceptance criteria checklist — M1
 
-| Test | Reason | Promote When |
-|------|--------|-------------|
-| `EpicCTest.testPathSandbox` | Uses Linux absolute paths; fails on Windows host | `PathSandbox` handles platform-agnostic paths, or test uses temp dirs |
-| `SecurityTestSuite.testAttackScenarios` | Imports `:crypseal-guard` classes from `:crypseal-runtime` test (cross-module) | Move to integration test source set or add `testImplementation(project(":crypseal-guard"))` |
-| `GoldenPathDemoTest.testPythonEndToEndGoldenPath` | `AgentOrchestrator.runActLoop` passes `emptyMap()` to tools; doesn't parse `toolCallArgsJson` | Orchestrator parses JSON args from `ModelResponse.toolCallArgsJson` |
-| `EpicFTest.testAgentOrchestratorPlanMode` | Orchestrator calls `repairToolCall(rawResponse.text)`, discarding `MockModelRuntime`'s structured `toolCallName` | Orchestrator uses `ModelResponse` directly and only falls back to repair when needed |
+- [x] `./gradlew assembleDebug` passes (exit 0)
+- [x] `./gradlew testDebugUnitTest` passes (exit 0)
+- [x] No newly introduced quarantines
+- [x] `EpicCTest.testPathSandbox` — un-quarantined, passing
+- [x] `EpicFTest.testAgentOrchestratorPlanMode` — un-quarantined, passing
+- [x] `GoldenPathDemoTest.testPythonEndToEndGoldenPath` — un-quarantined, passing
+- [x] `AgentOrchestrator` drives `MockModelRuntime` → `FileReadTool` with parsed `{"path":"main.py"}` → captures `TOOL_RESULT` with file content
 
 ---
 
-## Next task
+## Recommended next milestone
 
-**Do not add new features.** The first vertical slice should:
+### M2 — Cross-Module Integration & SecurityTestSuite
 
-1. Fix `AgentOrchestrator.runActLoop` to use `ModelResponse.toolCallName` / `toolCallArgsJson` directly instead of re-parsing through `repairToolCall`
-2. Parse `toolCallArgsJson` into the `Map<String, Any>` that tools expect
-3. Un-quarantine `testAgentOrchestratorPlanMode` and `GoldenPathDemoTest`
-4. Fix `PathSandbox` to use platform-agnostic path resolution
-5. Un-quarantine `testPathSandbox`
-
-This gives a working **model → tool dispatch → observation → loop** pipeline backed by real passing tests.
+1. Add `testImplementation(project(":crypseal-guard"))` to `:crypseal-runtime` and un-quarantine `SecurityTestSuite`
+2. Wire `CommandClassifier` + `PathSandbox` into `AgentOrchestrator` so tool execution is policy-gated
+3. Add a `RunCommandTool` that delegates to `TermuxIntentRunner` (mock for tests, real on device)
+4. Write an integration test where the orchestrator runs `read_file`, then tries `run_command` and gets policy-checked
+5. All tests green, no new quarantines

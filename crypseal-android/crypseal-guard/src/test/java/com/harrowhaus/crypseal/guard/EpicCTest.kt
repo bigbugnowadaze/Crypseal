@@ -7,23 +7,57 @@ import java.nio.file.Files
 
 class EpicCTest {
 
-    @org.junit.Ignore("Quarantined until PathSandbox resolves absolute paths correctly on Windows vs Linux")
     @Test
     fun testPathSandbox() {
-        val root = File("/home/user/project")
+        // Use temp directories so this works on any OS
+        val root = Files.createTempDirectory("crypseal_sandbox_root").toFile()
+        val srcDir = File(root, "src")
+        srcDir.mkdirs()
+        val mainKt = File(srcDir, "main.kt")
+        mainKt.writeText("fun main() {}")
+
         val sandbox = PathSandbox(root)
-        
-        assertTrue(sandbox.isPathSafe("/home/user/project/src/main.kt"))
-        assertTrue(sandbox.isPathSafe("src/main.kt"))
-        
-        // Traversal
-        assertFalse(sandbox.isPathSafe("../other_project/src.kt"))
-        assertFalse(sandbox.isPathSafe("/home/user/other_project/src.kt"))
-        
-        // Protected
-        assertFalse(sandbox.isPathSafe(".git/config"))
-        assertFalse(sandbox.isPathSafe(".env.local"))
-        assertFalse(sandbox.isPathSafe(".ssh/id_rsa"))
+
+        // Absolute path inside project — safe
+        assertTrue("Absolute path inside root should be safe",
+            sandbox.isPathSafe(mainKt.absolutePath))
+
+        // Relative path inside project — safe
+        assertTrue("Relative path inside root should be safe",
+            sandbox.isPathSafe("src/main.kt"))
+
+        // Traversal attack: ../outside.txt
+        val outside = File(root.parentFile, "outside.txt")
+        outside.writeText("should not be reachable")
+        assertFalse("Traversal via ../ should be blocked",
+            sandbox.isPathSafe("../outside.txt"))
+
+        // Absolute path outside project
+        assertFalse("Absolute path outside root should be blocked",
+            sandbox.isPathSafe(outside.absolutePath))
+
+        // Protected: .git/config
+        val gitDir = File(root, ".git")
+        gitDir.mkdirs()
+        File(gitDir, "config").writeText("[core]")
+        assertFalse("Access to .git/config should be blocked",
+            sandbox.isPathSafe(".git/config"))
+
+        // Protected: .env.local
+        File(root, ".env.local").writeText("SECRET=x")
+        assertFalse("Access to .env.local should be blocked",
+            sandbox.isPathSafe(".env.local"))
+
+        // Protected: .ssh/id_rsa
+        val sshDir = File(root, ".ssh")
+        sshDir.mkdirs()
+        File(sshDir, "id_rsa").writeText("key")
+        assertFalse("Access to .ssh/id_rsa should be blocked",
+            sandbox.isPathSafe(".ssh/id_rsa"))
+
+        // Clean up
+        root.deleteRecursively()
+        outside.delete()
     }
 
     @Test

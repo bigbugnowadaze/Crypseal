@@ -28,7 +28,6 @@ class EpicFTest {
         assertTrue(detector.isLooping(toolStr)) // 3rd attempt
     }
 
-    @org.junit.Ignore("Quarantined: orchestrator re-parses via repairToolCall, losing structured MockModelRuntime tool calls")
     @Test
     fun testAgentOrchestratorPlanMode(): Unit = runBlocking {
         val tempDir = Files.createTempDirectory("crypseal_test").toFile()
@@ -46,7 +45,8 @@ class EpicFTest {
         // Run in PLAN mode
         val result = orchestrator.runActLoop(history, isPlanMode = true)
         
-        assertTrue(history.any { it.payload.contains("Cannot execute mutating tool 'apply_patch' in PLAN mode") })
+        assertTrue("Plan mode should emit rejection for mutating tool",
+            history.any { it.payload.contains("Cannot execute mutating tool 'apply_patch' in PLAN mode") })
         
         tempDir.deleteRecursively()
     }
