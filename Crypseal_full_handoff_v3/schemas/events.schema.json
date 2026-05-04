@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Crypseal Event",
+  "type": "object",
+  "required": [
+    "eventId",
+    "sessionId",
+    "type",
+    "createdAt"
+  ],
+  "properties": {
+    "eventId": {
+      "type": "string"
+    },
+    "sessionId": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string"
+    },
+    "payload": {
+      "type": "object"
+    }
+  }
+}

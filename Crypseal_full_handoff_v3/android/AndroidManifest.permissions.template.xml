@@ -1,0 +1,11 @@
+<!-- Template only; integrate into real AndroidManifest.xml -->
+<uses-permission android:name="com.termux.permission.RUN_COMMAND" />
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+<!-- Android 14+ foreground service type permissions must match actual service use. -->
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+
+<queries>
+    <package android:name="com.termux" />
+</queries>

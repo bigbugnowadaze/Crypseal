@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "defaultMode": "ASK",
+  "protectedPaths": [
+    ".git/**",
+    ".crypseal/**",
+    ".Crypseal/**",
+    ".termux/**",
+    ".ssh/**",
+    ".gnupg/**",
+    ".env",
+    ".env.*",
+    "../**",
+    "/sdcard/**",
+    "/storage/emulated/0/**"
+  ],
+  "denyPatterns": [
+    "rm -rf /",
+    "rm -rf ~",
+    "curl * | sh",
+    "wget * | sh",
+    "chmod 777 -R *",
+    "cat ~/.ssh/*",
+    "git push --force"
+  ],
+  "askPatterns": [
+    "pip install *",
+    "npm install *",
+    "cargo install *",
+    "python -c *",
+    "node -e *",
+    "bash -c *",
+    "sh -c *",
+    "curl *",
+    "wget *"
+  ],
+  "allowPatterns": [
+    "pwd",
+    "ls *",
+    "git status",
+    "git diff *",
+    "rg *",
+    "python -m py_compile *"
+  ]
+}

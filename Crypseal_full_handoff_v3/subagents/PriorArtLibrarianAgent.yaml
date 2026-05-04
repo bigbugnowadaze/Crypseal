@@ -1,0 +1,13 @@
+{
+  "role": "Finds and summarizes public repos, papers, docs, specs, and patterns before architecture decisions.",
+  "tools": [
+    "web",
+    "repo_search",
+    "read"
+  ],
+  "deliverables": [
+    "source cards",
+    "implementation recommendations",
+    "avoid/copy-cleanly notes"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "role": "Audits dynamic type, contrast, screen reader labels, touch targets, and motion sensitivity.",
+  "tools": [
+    "review"
+  ],
+  "deliverables": [
+    "a11y issues",
+    "acceptance criteria"
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "name": "ImplementAgent",
+  "tools": [
+    "file.read",
+    "file.patch",
+    "file.write",
+    "termux.exec",
+    "git.diff"
+  ],
+  "can_edit": true,
+  "purpose": "Apply bounded file changes and run verification commands."
+}

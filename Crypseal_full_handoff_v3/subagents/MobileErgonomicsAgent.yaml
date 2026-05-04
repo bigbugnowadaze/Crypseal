@@ -1,0 +1,9 @@
+{
+  "role": "Reviews thumb reach, screen density, battery/thermal UX, notifications, and Android-specific friction.",
+  "tools": [
+    "review"
+  ],
+  "deliverables": [
+    "mobile constraints memo"
+  ]
+}

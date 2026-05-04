@@ -1,0 +1,11 @@
+{
+  "role": "Owns privacy, local-first messaging, permission rationale, and trust language.",
+  "tools": [
+    "review",
+    "write"
+  ],
+  "deliverables": [
+    "trust copy",
+    "privacy risks"
+  ]
+}

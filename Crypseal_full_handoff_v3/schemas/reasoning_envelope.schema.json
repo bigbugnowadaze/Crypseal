@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Crypseal Reasoning Envelope",
+  "type": "object",
+  "required": [
+    "mode",
+    "reasoning_budget",
+    "visible_reasoning_summary",
+    "evidence",
+    "assumptions"
+  ],
+  "properties": {
+    "mode": {
+      "enum": [
+        "chat",
+        "plan",
+        "act",
+        "review",
+        "explain"
+      ]
+    },
+    "reasoning_budget": {
+      "enum": [
+        "none",
+        "low",
+        "medium",
+        "high",
+        "deep"
+      ]
+    },
+    "visible_reasoning_summary": {
+      "type": "string"
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "assumptions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "reviewers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "tool_calls": {
+      "type": "array"
+    },
+    "verification_plan": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

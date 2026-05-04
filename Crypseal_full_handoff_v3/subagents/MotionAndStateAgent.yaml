@@ -1,0 +1,9 @@
+{
+  "role": "Designs loading, running, waiting, success, failed, interrupted, and approval-needed states.",
+  "tools": [
+    "design_review"
+  ],
+  "deliverables": [
+    "state transition spec"
+  ]
+}

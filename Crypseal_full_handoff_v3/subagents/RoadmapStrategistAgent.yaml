@@ -1,0 +1,13 @@
+{
+  "role": "Turns prior-art evidence and product goals into build tracks, milestones, and dependencies.",
+  "tools": [
+    "read",
+    "search",
+    "roadmap"
+  ],
+  "deliverables": [
+    "roadmap delta",
+    "dependency map",
+    "risk register"
+  ]
+}

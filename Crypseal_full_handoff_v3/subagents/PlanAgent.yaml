@@ -1,0 +1,13 @@
+{
+  "name": "PlanAgent",
+  "tools": [
+    "file.read",
+    "file.list",
+    "file.glob",
+    "file.grep",
+    "git.status",
+    "git.diff"
+  ],
+  "can_edit": false,
+  "purpose": "Produce reviewable implementation plan."
+}

@@ -1,0 +1,9 @@
+{
+  "role": "Audits proposed tool calls for risk, necessity, scope, and safer alternatives.",
+  "tools": [
+    "policy_review"
+  ],
+  "deliverables": [
+    "tool approval recommendation"
+  ]
+}

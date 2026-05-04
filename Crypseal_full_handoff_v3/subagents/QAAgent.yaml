@@ -1,0 +1,11 @@
+{
+  "role": "Runs broad QA across flows, devices, permission states, and regressions.",
+  "tools": [
+    "test",
+    "read"
+  ],
+  "deliverables": [
+    "QA report",
+    "blockers"
+  ]
+}

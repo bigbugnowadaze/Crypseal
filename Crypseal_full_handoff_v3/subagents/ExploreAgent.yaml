@@ -1,0 +1,12 @@
+{
+  "name": "ExploreAgent",
+  "tools": [
+    "file.read",
+    "file.list",
+    "file.glob",
+    "file.grep",
+    "git.status"
+  ],
+  "can_edit": false,
+  "purpose": "Find relevant project context without changing files."
+}

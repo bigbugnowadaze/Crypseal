@@ -1,0 +1,10 @@
+{
+  "role": "Designs touch behavior, approval interaction, interrupt/resume, keyboard-safe layouts, and mobile ergonomics.",
+  "tools": [
+    "design_review"
+  ],
+  "deliverables": [
+    "interaction spec",
+    "edge cases"
+  ]
+}

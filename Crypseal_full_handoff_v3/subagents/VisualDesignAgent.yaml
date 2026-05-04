@@ -1,0 +1,12 @@
+{
+  "role": "Owns visual hierarchy, Material 3 alignment, theming, log/card/diff surfaces, and design tokens.",
+  "tools": [
+    "design_review",
+    "write"
+  ],
+  "deliverables": [
+    "visual critique",
+    "token suggestions",
+    "screen polish list"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "name": "GitAgent",
+  "tools": [
+    "git.status",
+    "git.diff",
+    "git.add",
+    "git.commit"
+  ],
+  "can_edit": false,
+  "purpose": "Summarize git state and prepare commits."
+}

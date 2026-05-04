@@ -1,0 +1,11 @@
+{
+  "role": "Writes first-run setup, Termux permission education, and model/runtime onboarding.",
+  "tools": [
+    "write",
+    "review"
+  ],
+  "deliverables": [
+    "onboarding strings",
+    "setup explanations"
+  ]
+}

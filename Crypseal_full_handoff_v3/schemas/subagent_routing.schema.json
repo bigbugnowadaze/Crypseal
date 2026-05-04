@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Crypseal Subagent Routing Decision",
+  "type": "object",
+  "required": [
+    "primary_agent",
+    "reviewers",
+    "reason"
+  ],
+  "properties": {
+    "primary_agent": {
+      "type": "string"
+    },
+    "reviewers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "reason": {
+      "type": "string"
+    },
+    "tool_scope": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "max_iterations": {
+      "type": "integer"
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "role": "Acts as final taste reviewer for UI/UX. Blocks generic, cramped, or untrustworthy screens.",
+  "tools": [
+    "review"
+  ],
+  "deliverables": [
+    "blocking design issues",
+    "polish list"
+  ]
+}

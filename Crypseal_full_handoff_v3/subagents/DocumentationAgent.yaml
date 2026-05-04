@@ -1,0 +1,11 @@
+{
+  "role": "Writes developer docs, user docs, README, AGENT.md templates, skill documentation.",
+  "tools": [
+    "write",
+    "read"
+  ],
+  "deliverables": [
+    "docs patches",
+    "doc audit"
+  ]
+}

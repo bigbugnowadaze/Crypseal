@@ -1,0 +1,11 @@
+{
+  "role": "Turns errors, blocked commands, failed installs, and permission problems into clear next-step copy.",
+  "tools": [
+    "write",
+    "review"
+  ],
+  "deliverables": [
+    "error summaries",
+    "recovery cards"
+  ]
+}

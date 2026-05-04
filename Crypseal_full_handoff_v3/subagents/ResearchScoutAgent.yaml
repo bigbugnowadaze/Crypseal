@@ -1,0 +1,10 @@
+{
+  "role": "Performs quick targeted source gathering for uncertain technical claims.",
+  "tools": [
+    "web",
+    "read"
+  ],
+  "deliverables": [
+    "short source-backed brief"
+  ]
+}

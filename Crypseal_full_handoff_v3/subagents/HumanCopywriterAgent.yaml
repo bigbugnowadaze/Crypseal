@@ -1,0 +1,12 @@
+{
+  "role": "Writes human copy, microcopy, command explanations, onboarding, and concise app language.",
+  "tools": [
+    "write",
+    "review"
+  ],
+  "deliverables": [
+    "copy variants",
+    "final strings",
+    "tone notes"
+  ]
+}

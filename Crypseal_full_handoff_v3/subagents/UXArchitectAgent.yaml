@@ -1,0 +1,13 @@
+{
+  "role": "Owns end-to-end mobile flows, information architecture, and state models.",
+  "tools": [
+    "design_review",
+    "read",
+    "write"
+  ],
+  "deliverables": [
+    "flow spec",
+    "screen state table",
+    "UX risks"
+  ]
+}

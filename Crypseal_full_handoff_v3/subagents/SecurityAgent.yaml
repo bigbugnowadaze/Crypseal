@@ -1,0 +1,10 @@
+{
+  "name": "SecurityAgent",
+  "tools": [
+    "file.read",
+    "file.grep",
+    "git.diff"
+  ],
+  "can_edit": false,
+  "purpose": "Review commands, diffs, dependencies, and secret risks."
+}

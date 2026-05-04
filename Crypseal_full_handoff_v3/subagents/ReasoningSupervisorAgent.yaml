@@ -1,0 +1,11 @@
+{
+  "role": "Selects reasoning budget, determines when reviewers are needed, and prevents fake deep thinking.",
+  "tools": [
+    "review",
+    "plan"
+  ],
+  "deliverables": [
+    "thinking budget decision",
+    "reviewer routing"
+  ]
+}

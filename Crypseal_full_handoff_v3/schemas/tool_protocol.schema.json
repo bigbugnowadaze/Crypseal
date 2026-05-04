@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Crypseal Tool Call",
+  "type": "object",
+  "required": [
+    "type",
+    "tool",
+    "args"
+  ],
+  "properties": {
+    "type": {
+      "const": "tool_call"
+    },
+    "tool": {
+      "type": "string",
+      "enum": [
+        "file.read",
+        "file.write",
+        "file.patch",
+        "file.list",
+        "file.glob",
+        "file.grep",
+        "termux.exec",
+        "termux.process.output",
+        "termux.process.stop",
+        "git.status",
+        "git.diff",
+        "git.add",
+        "git.commit",
+        "project.create",
+        "project.open",
+        "project.snapshot",
+        "project.revert",
+        "session.status",
+        "session.compact",
+        "session.fork",
+        "browser.openLocalhost"
+      ]
+    },
+    "args": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": false
+}

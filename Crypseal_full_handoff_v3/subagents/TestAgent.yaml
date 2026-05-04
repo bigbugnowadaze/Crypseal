@@ -1,0 +1,10 @@
+{
+  "name": "TestAgent",
+  "tools": [
+    "termux.exec",
+    "file.read",
+    "file.grep"
+  ],
+  "can_edit": false,
+  "purpose": "Run and summarize diagnostics."
+}

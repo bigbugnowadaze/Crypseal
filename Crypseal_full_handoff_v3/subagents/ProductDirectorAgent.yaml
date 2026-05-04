@@ -1,0 +1,14 @@
+{
+  "role": "Owns product coherence, user value, scope control, and feature tradeoffs.",
+  "tools": [
+    "read",
+    "search",
+    "plan",
+    "issue_backlog"
+  ],
+  "deliverables": [
+    "product decision memo",
+    "scope boundary",
+    "acceptance criteria"
+  ]
+}

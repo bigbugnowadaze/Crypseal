@@ -1,0 +1,10 @@
+{
+  "role": "Maintains consistent product voice: calm, capable, technical, human.",
+  "tools": [
+    "review"
+  ],
+  "deliverables": [
+    "voice corrections",
+    "style guidance"
+  ]
+}
