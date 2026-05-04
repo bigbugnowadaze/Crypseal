@@ -3,10 +3,12 @@ package com.harrowhaus.crypseal.guard
 class CommandClassifier {
 
     private val denyPatterns = listOf(
-        Regex("rm\\s+-rf\\s+/$"),
-        Regex("rm\\s+-rf\\s+~$"),
-        Regex("rm\\s+-rf\\s+\\*$"),
+        Regex("rm\\s+-rf\\s+/"),
+        Regex("rm\\s+-rf\\s+~"),
+        Regex("rm\\s+-rf\\s+\\*"),
+        Regex("rm\\s+-rf\\s+\\."),
         Regex("curl\\s+.*\\|\\s*sh"),
+        Regex("curl\\s+.*\\|\\s*bash"),
         Regex("wget\\s+.*\\|\\s*sh"),
         Regex("chmod\\s+777\\s+-R"),
         Regex("chown\\s+-R"),

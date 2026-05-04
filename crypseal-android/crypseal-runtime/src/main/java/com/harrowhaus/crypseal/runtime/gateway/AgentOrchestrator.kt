@@ -1,5 +1,6 @@
 package com.harrowhaus.crypseal.runtime.gateway
 
+import com.harrowhaus.crypseal.guard.PolicyAction
 import com.harrowhaus.crypseal.runtime.context.ContextBuilder
 import com.harrowhaus.crypseal.runtime.models.ModelRuntime
 import com.harrowhaus.crypseal.runtime.models.ModelOutputRepair
@@ -12,11 +13,12 @@ class AgentOrchestrator(
     private val toolRegistry: ToolRegistry,
     private val contextBuilder: ContextBuilder,
     private val outputRepair: ModelOutputRepair,
-    private val failureDetector: FailureDetector
+    private val failureDetector: FailureDetector,
+    private val policyGate: PolicyGate? = null
 ) {
 
     companion object {
-        private val MUTATING_TOOLS = setOf("apply_patch", "run_command", "git_commit")
+        private val MUTATING_TOOLS = setOf("apply_patch", "run_command", "git_commit", "write_file")
     }
 
     suspend fun runActLoop(
@@ -63,6 +65,63 @@ class AgentOrchestrator(
                 return OrchestrationResult(false, "Failure loop detected on tool: $toolName")
             }
 
+            // ---- Parse args ----
+            val parseResult = ToolArgParser.parse(response.toolCallArgsJson)
+            if (!parseResult.success) {
+                failureDetector.recordFailure(toolSignature)
+                sessionHistory.add(CrypsealEvent(
+                    sessionId = "active",
+                    type = EventType.TOOL_CALL,
+                    payload = "{\"tool\":\"$toolName\",\"args\":${response.toolCallArgsJson ?: "{}"}}"
+                ))
+                sessionHistory.add(CrypsealEvent(
+                    sessionId = "active",
+                    type = EventType.TOOL_RESULT,
+                    payload = "Error: ${parseResult.error}"
+                ))
+                continue
+            }
+            val args = parseResult.args!!
+
+            // ---- Policy gate ----
+            if (policyGate != null) {
+                val verdict = policyGate.evaluate(toolName, args)
+                when (verdict.action) {
+                    PolicyAction.DENY -> {
+                        sessionHistory.add(CrypsealEvent(
+                            sessionId = "active",
+                            type = EventType.TOOL_CALL,
+                            payload = "{\"tool\":\"$toolName\",\"args\":${response.toolCallArgsJson ?: "{}"}}"
+                        ))
+                        sessionHistory.add(CrypsealEvent(
+                            sessionId = "active",
+                            type = EventType.TOOL_RESULT,
+                            payload = "DENIED: ${verdict.reason} [${verdict.riskLevel}]"
+                        ))
+                        failureDetector.recordFailure(toolSignature)
+                        continue
+                    }
+                    PolicyAction.ASK -> {
+                        sessionHistory.add(CrypsealEvent(
+                            sessionId = "active",
+                            type = EventType.TOOL_CALL,
+                            payload = "{\"tool\":\"$toolName\",\"args\":${response.toolCallArgsJson ?: "{}"}}"
+                        ))
+                        sessionHistory.add(CrypsealEvent(
+                            sessionId = "active",
+                            type = EventType.APPROVAL_REQUEST,
+                            payload = "WAITING: ${verdict.reason} [${verdict.riskLevel}]"
+                        ))
+                        // For now, treat ASK as a soft block — do not execute
+                        // Future M3 will add the approval request/response flow
+                        continue
+                    }
+                    PolicyAction.ALLOW -> {
+                        // Fall through to execution
+                    }
+                }
+            }
+
             // ---- Emit TOOL_CALL event ----
             sessionHistory.add(CrypsealEvent(
                 sessionId = "active",
@@ -82,20 +141,8 @@ class AgentOrchestrator(
                 continue
             }
 
-            // ---- Parse args ----
-            val parseResult = ToolArgParser.parse(response.toolCallArgsJson)
-            if (!parseResult.success) {
-                failureDetector.recordFailure(toolSignature)
-                sessionHistory.add(CrypsealEvent(
-                    sessionId = "active",
-                    type = EventType.TOOL_RESULT,
-                    payload = "Error: ${parseResult.error}"
-                ))
-                continue
-            }
-
             // ---- Execute tool with real parsed args ----
-            val toolResult = tool.execute(parseResult.args!!)
+            val toolResult = tool.execute(args)
 
             // ---- Record outcome ----
             if (toolResult.success) {
