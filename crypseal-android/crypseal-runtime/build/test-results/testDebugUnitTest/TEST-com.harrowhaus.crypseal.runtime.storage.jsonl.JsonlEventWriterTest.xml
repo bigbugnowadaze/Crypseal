@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.harrowhaus.crypseal.runtime.storage.jsonl.JsonlEventWriterTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-05-04T22:03:59" hostname="TEETH" time="0.043">
-  <properties/>
-  <testcase name="testAppendAndReplay" classname="com.harrowhaus.crypseal.runtime.storage.jsonl.JsonlEventWriterTest" time="0.043"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

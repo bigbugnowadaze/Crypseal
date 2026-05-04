@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.harrowhaus.crypseal.runtime.models.EpicETest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-05-04T22:03:59" hostname="TEETH" time="0.029">
-  <properties/>
-  <testcase name="testMockRuntimeDeterministic" classname="com.harrowhaus.crypseal.runtime.models.EpicETest" time="0.026"/>
-  <testcase name="testModelOutputRepair" classname="com.harrowhaus.crypseal.runtime.models.EpicETest" time="0.003"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.harrowhaus.crypseal.runtime.tools.EpicDTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-05-04T22:03:59" hostname="TEETH" time="0.078">
-  <properties/>
-  <testcase name="testFileReadAndTruncate" classname="com.harrowhaus.crypseal.runtime.tools.EpicDTest" time="0.046"/>
-  <testcase name="testToolRegistry" classname="com.harrowhaus.crypseal.runtime.tools.EpicDTest" time="0.002"/>
-  <testcase name="testCheckpointRevert" classname="com.harrowhaus.crypseal.runtime.tools.EpicDTest" time="0.029"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>
