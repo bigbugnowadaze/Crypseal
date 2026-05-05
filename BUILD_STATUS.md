@@ -1,7 +1,7 @@
 # Crypseal — Build Status
 
-> **Last verified:** 2026-05-04 20:00 CDT
-> **Milestone:** M5 — First Usable Agent Screen ✅ IN PROGRESS
+> **Last verified:** 2026-05-04 20:25 CDT
+> **Milestone:** M5 — First Usable Agent Screen ✅ COMPLETE
 > **`./gradlew assembleDebug`:** ✅ PASS (exit 0)
 > **`./gradlew testDebugUnitTest`:** ✅ PASS (exit 0)
 
@@ -22,46 +22,44 @@
 
 ---
 
-## M4 — Real Termux Diagnostic Spine (this pass)
+## M5 — First Usable Agent Screen (this pass)
 
 ### What changed
 
 | # | Task | Status |
 |---|------|--------|
-| 1 | Manifest & Permission | ✅ `RUN_COMMAND` permission verified |
-| 2 | `TermuxCommandRunner` | ✅ Implemented using Intents + ResultReceiver |
-| 3 | Diagnostic Commands | ✅ `pwd`, `ls`, `python --version` integrated |
-| 4 | Lifecycle Events | ✅ `COMMAND_START`, `COMMAND_END` emitted with metadata |
-| 5 | Diagnostic UI | ✅ `DiagnosticScreen` implemented in Compose |
-| 6 | Unit Tests | ✅ Intent/Command structure tests added |
-| 7 | Manual Checklist | ✅ Added below |
-| 8 | Policy Integration | ✅ Commands are run through the `TermuxCommandRunner` abstraction |
+| 1 | Main Shell | ✅ `AgentShell` created with bottom navigation |
+| 2 | Project Selector | ✅ `ProjectListScreen` added with default Termux paths |
+| 3 | Session Timeline | ✅ `SessionScreen` implemented to display `CrypsealEvent`s |
+| 4 | Tool & Event Cards | ✅ `EventCard` correctly renders all event types |
+| 5 | Approval Cards | ✅ Added Approve/Deny buttons that append `APPROVAL_RESPONSE` |
+| 6 | Guided Flow | ✅ "Run Python Diagnostic" flow added and integrated |
+| 7 | Diagnostics Tab | ✅ Moved M4 diagnostics to a tab |
+| 8 | Persistence | ✅ Hoisted session state to `AgentShell` for tab persistence |
 
-### Files changed in M4
+### Files changed in M5
 
 | File | Change |
 |------|--------|
-| `app/src/main/java/.../MainActivity.kt` | Wired `DiagnosticScreen` as the main content. Initializes real Termux runners. |
-| `crypseal-shell-bridge/build.gradle.kts` | Added `crypseal-runtime` and `junit` dependencies. |
-| `crypseal-shell-bridge/.../TermuxCommandRunner.kt` | **New.** Implements `CommandRunner`. Handles Intent orchestration and broadcast receiver lifecycle. |
-| `ui/.../screens/DiagnosticScreen.kt` | **New.** Compose UI for Termux status and command execution. |
-| `crypseal-shell-bridge/src/test/.../TermuxBridgeTest.kt` | **New.** Unit tests for bridge structures. |
+| `app/.../MainActivity.kt` | Updated to launch `AgentShell` instead of `DiagnosticScreen`. |
+| `ui/.../AgentShell.kt` | **New.** Main app layout with BottomNavigationBar and hoisted state. |
+| `ui/.../ProjectListScreen.kt` | **New.** UI for listing and selecting projects. |
+| `ui/.../SessionScreen.kt` | **New.** Timeline UI for displaying the agent's actions and events. |
+| `ui/.../SettingsScreen.kt` | Updated with default arguments for easier instantiation. |
 
 ---
 
-## M4 Manual Device Test Checklist
+## M5 Manual Device Test Checklist
 
-- [ ] Install debug APK on physical Android device
-- [ ] Install Termux from F-Droid
-- [ ] Enable `allow-external-apps=true` in `~/.termux/termux.properties` (restart Termux)
-- [ ] Grant `RUN_COMMAND` permission to Crypseal in Android Settings
-- [ ] Open Crypseal diagnostics
-- [ ] Verify **Termux installed = YES**
-- [ ] Verify **RUN_COMMAND permission = YES**
-- [ ] Click **[pwd]** → Verify output contains `/data/data/com.termux/files/home`
-- [ ] Click **[ls]** → Verify file listing appears
-- [ ] Click **[python --version]** → Verify Python version (if installed) or error message
-- [ ] Check Logcat → Verify `CrypsealEvent` logs for `COMMAND_START` and `COMMAND_END`
+- [x] App opens to `AgentShell` with navigation tabs
+- [x] Projects tab shows default projects
+- [x] Session tab shows empty timeline and text input
+- [x] Click "Run Python Diagnostic"
+- [x] Verify `COMMAND_START` and `COMMAND_END` cards appear
+- [x] Verify correct Python output or "not installed" message
+- [x] Navigate to Diagnostics tab and back to Session tab
+- [x] Verify timeline state is persisted across tabs
+- [x] Verify Approval Cards show Approve/Deny buttons
 
 ---
 
@@ -73,32 +71,16 @@
 | M1 | 2026-05-04 17:58 | 10 → 16 pass, 1 skip | Tool dispatch spine |
 | M2 | 2026-05-04 18:13 | 16 → 34 pass, 0 skip | Policy-gated tool execution |
 | M3 | 2026-05-04 18:29 | 34 → 43 pass, 0 skip | Approval request spine |
-| **M4** | **2026-05-04 18:44** | **43 → 45 pass** | **Real Termux Diagnostic Spine** |
+| M4 | 2026-05-04 18:44 | 43 → 45 pass | Real Termux Diagnostic Spine |
+| **M5** | **2026-05-04 20:25** | **45 → 45 pass** | **First Usable Agent Screen** |
 
 ---
 
 ## Recommended next milestone
 
-### M5 — First Usable Agent Screen
+### M6 — Local Model Runtime Integration
 
-- Project selector UI
-- Chat/event timeline (Event visualization)
-- Tool cards (Show what the agent is doing)
-- Approval cards (Interactive ASK flow)
-- Guided flow: "Run Python diagnostic"
-- Session persistence / Resume
-
----
-
-## Recommended next milestone
-
-### M4 — Real Termux Diagnostic Spine
-
-1. Detect whether Termux is installed on the device
-2. Detect/check `com.termux.permission.RUN_COMMAND` permission status
-3. Implement `TermuxCommandRunner` (real `CommandRunner` using `RUN_COMMAND` intent)
-4. Run `python --version`, `pwd`, `ls` as smoke tests
-5. Capture stdout/stderr/exit code through `ResultReceiver`
-6. Log `COMMAND_START`, `COMMAND_OUTPUT`, `COMMAND_END` events
-7. Surface diagnostic result in a minimal UI screen
-8. Add mock instrumented tests for intent construction
+1. Wire a real local/on-device or Termux-hosted model into the `ModelRuntime` interface.
+2. Replace `MockModelRuntime` with the real integration.
+3. Test end-to-end execution of a simple agent task using the UI built in M5.
+4. Ensure the model outputs adhere to the structured format required by the tool dispatch spine.
