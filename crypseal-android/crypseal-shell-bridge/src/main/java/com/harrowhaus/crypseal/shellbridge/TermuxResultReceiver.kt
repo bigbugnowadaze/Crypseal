@@ -28,20 +28,24 @@ class TermuxResultReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val commandId = intent.getStringExtra("command_id") ?: return
         
-        // Log all extras to find the right keys
-        val extras = intent.extras
-        if (extras != null) {
-            for (key in extras.keySet()) {
-                Log.e("TermuxResult", "Extra: $key = ${extras.get(key)}")
+        val resultBundle = intent.getBundleExtra("result")
+        if (resultBundle != null) {
+            for (key in resultBundle.keySet()) {
+                Log.e("TermuxResult", "Result Bundle Extra: $key = ${resultBundle.get(key)}")
             }
         }
 
-        val exitCode = intent.getIntExtra("com.termux.RUN_COMMAND_EXIT_CODE", -1)
-        val stdout = intent.getStringExtra("com.termux.RUN_COMMAND_STDOUT") ?: ""
-        val stderr = intent.getStringExtra("com.termux.RUN_COMMAND_STDERR") ?: ""
+        // Try getting from bundle first, fallback to intent
+        val exitCode = resultBundle?.getInt("com.termux.RUN_COMMAND_EXIT_CODE", -1) 
+            ?: intent.getIntExtra("com.termux.RUN_COMMAND_EXIT_CODE", -1)
+            
+        val stdout = resultBundle?.getString("com.termux.RUN_COMMAND_STDOUT") 
+            ?: intent.getStringExtra("com.termux.RUN_COMMAND_STDOUT") ?: ""
+            
+        val stderr = resultBundle?.getString("com.termux.RUN_COMMAND_STDERR") 
+            ?: intent.getStringExtra("com.termux.RUN_COMMAND_STDERR") ?: ""
         
         Log.e("TermuxResult", "Parsed result for $commandId: exit=$exitCode, stdout_len=${stdout.length}")
-        Toast.makeText(context, "Crypseal: Received $commandId result", Toast.LENGTH_SHORT).show()
         
         pendingCommands[commandId]?.complete(ResultData(exitCode, stdout, stderr))
     }
