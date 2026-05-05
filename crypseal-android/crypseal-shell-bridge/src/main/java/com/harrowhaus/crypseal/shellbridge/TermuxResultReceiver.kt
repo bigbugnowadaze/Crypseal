@@ -35,18 +35,19 @@ class TermuxResultReceiver : BroadcastReceiver() {
             }
         }
 
-        // Try getting from bundle first, fallback to intent
-        val exitCode = resultBundle?.getInt("com.termux.RUN_COMMAND_EXIT_CODE", -1) 
+        // Try getting from bundle first (using short keys), fallback to intent (long keys)
+        val exitCode = resultBundle?.getInt("exitCode", -1) 
             ?: intent.getIntExtra("com.termux.RUN_COMMAND_EXIT_CODE", -1)
             
-        val stdout = resultBundle?.getString("com.termux.RUN_COMMAND_STDOUT") 
+        val stdout = resultBundle?.getString("stdout") 
             ?: intent.getStringExtra("com.termux.RUN_COMMAND_STDOUT") ?: ""
             
-        val stderr = resultBundle?.getString("com.termux.RUN_COMMAND_STDERR") 
+        val stderr = resultBundle?.getString("stderr") 
             ?: intent.getStringExtra("com.termux.RUN_COMMAND_STDERR") ?: ""
         
         Log.e("TermuxResult", "Parsed result for $commandId: exit=$exitCode, stdout_len=${stdout.length}")
         
         pendingCommands[commandId]?.complete(ResultData(exitCode, stdout, stderr))
     }
+
 }
