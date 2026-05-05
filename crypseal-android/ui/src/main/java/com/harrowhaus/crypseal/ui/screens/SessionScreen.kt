@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import com.harrowhaus.crypseal.runtime.gateway.CrypsealEvent
 import com.harrowhaus.crypseal.runtime.gateway.EventType
 import com.harrowhaus.crypseal.shellbridge.TermuxCommandRunner
+import com.harrowhaus.crypseal.runtime.inference.RuntimeRegistry
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
@@ -23,7 +24,8 @@ fun SessionScreen(
     events: List<CrypsealEvent>,
     onEventsChanged: (List<CrypsealEvent>) -> Unit,
     inputMessage: String,
-    onInputMessageChanged: (String) -> Unit
+    onInputMessageChanged: (String) -> Unit,
+    runtimeRegistry: RuntimeRegistry
 ) {
     val scope = rememberCoroutineScope()
     val sessionId = projectId ?: "active_session"

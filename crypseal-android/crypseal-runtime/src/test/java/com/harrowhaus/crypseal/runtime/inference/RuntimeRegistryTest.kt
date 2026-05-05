@@ -11,10 +11,16 @@ class RuntimeRegistryTest {
     @Before
     fun setup() {
         registry = RuntimeRegistry()
+        // Register default Mock runtime for tests
+        registry.register(
+            RuntimeDescriptor("mock", "Mock", RuntimeType.MOCK, ""),
+            RuntimeHealth(RuntimeStatus.READY),
+            com.harrowhaus.crypseal.runtime.models.MockModelRuntime(listOf())
+        )
     }
 
     @Test
-    fun `registry initializes with mock runtime`() {
+    fun `registry initializes with runtimes`() {
         val runtimes = registry.getAvailableRuntimes()
         assertTrue(runtimes.isNotEmpty())
         assertEquals("mock", runtimes[0].descriptor.id)
@@ -24,7 +30,7 @@ class RuntimeRegistryTest {
     @Test
     fun `can register and select new runtime`() {
         val descriptor = RuntimeDescriptor("test", "Test Runtime", RuntimeType.TERMUX_SERVER, "")
-        registry.register(descriptor, RuntimeHealth(RuntimeStatus.READY))
+        registry.register(descriptor, RuntimeHealth(RuntimeStatus.READY), com.harrowhaus.crypseal.runtime.models.MockModelRuntime(listOf()))
         
         val success = registry.setActiveRuntime("test")
         assertTrue(success)

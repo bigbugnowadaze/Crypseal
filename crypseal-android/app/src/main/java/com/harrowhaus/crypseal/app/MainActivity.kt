@@ -13,6 +13,7 @@ import com.harrowhaus.crypseal.shellbridge.TermuxSetupChecker
 import com.harrowhaus.crypseal.ui.screens.AgentShell
 
 import com.harrowhaus.crypseal.runtime.inference.RuntimeRegistry
+import com.harrowhaus.crypseal.runtime.models.MockModelRuntime
 import com.harrowhaus.crypseal.runtime.inference.TermuxLlamaServerRuntime
 import com.harrowhaus.crypseal.runtime.inference.LiteRtGemmaRuntime
 import com.harrowhaus.crypseal.runtime.inference.RuntimeDescriptor
@@ -30,13 +31,24 @@ class MainActivity : ComponentActivity() {
         }
         
         val runtimeRegistry = RuntimeRegistry().apply {
+            // Mock
+            register(
+                RuntimeDescriptor("mock", "Mock Runtime", RuntimeType.MOCK, "For testing. Uses canned responses."),
+                RuntimeHealth(RuntimeStatus.READY),
+                MockModelRuntime(listOf())
+            )
+            // Termux
             register(
                 RuntimeDescriptor("llama_server", "Termux Llama Server", RuntimeType.TERMUX_SERVER, "Local llama.cpp REST API"),
-                RuntimeHealth(RuntimeStatus.READY) // Default to ready for now
+                RuntimeHealth(RuntimeStatus.READY),
+                TermuxLlamaServerRuntime()
             )
+            // LiteRT
+            val liteRt = LiteRtGemmaRuntime(this@MainActivity)
             register(
                 RuntimeDescriptor("litert_gemma", "LiteRT Gemma 4", RuntimeType.LITE_RT, "On-device Gemma inference"),
-                RuntimeHealth(RuntimeStatus.NEEDS_SETUP, "Model file missing")
+                RuntimeHealth(RuntimeStatus.NEEDS_SETUP, "Model file missing"),
+                liteRt
             )
         }
 

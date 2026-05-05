@@ -1,7 +1,7 @@
 # Crypseal — Build Status
 
-> **Last verified:** 2026-05-04 20:25 CDT
-> **Milestone:** M5 — First Usable Agent Screen ✅ COMPLETE
+> **Last verified:** 2026-05-04 20:40 CDT
+> **Milestone:** M6 — Local Model Runtime Integration ✅ COMPLETE
 > **`./gradlew assembleDebug`:** ✅ PASS (exit 0)
 > **`./gradlew testDebugUnitTest`:** ✅ PASS (exit 0)
 
@@ -22,44 +22,47 @@
 
 ---
 
-## M5 — First Usable Agent Screen (this pass)
+## M6 — Local Model Runtime Integration ✅ COMPLETE
 
 ### What changed
 
 | # | Task | Status |
 |---|------|--------|
-| 1 | Main Shell | ✅ `AgentShell` created with bottom navigation |
-| 2 | Project Selector | ✅ `ProjectListScreen` added with default Termux paths |
-| 3 | Session Timeline | ✅ `SessionScreen` implemented to display `CrypsealEvent`s |
-| 4 | Tool & Event Cards | ✅ `EventCard` correctly renders all event types |
-| 5 | Approval Cards | ✅ Added Approve/Deny buttons that append `APPROVAL_RESPONSE` |
-| 6 | Guided Flow | ✅ "Run Python Diagnostic" flow added and integrated |
-| 7 | Diagnostics Tab | ✅ Moved M4 diagnostics to a tab |
-| 8 | Persistence | ✅ Hoisted session state to `AgentShell` for tab persistence |
+| 1 | Runtime Models | ✅ `RuntimeRegistry`, `RuntimeDescriptor`, `RuntimeStatus`, etc. added |
+| 2 | Runtime Registry | ✅ Implemented `RuntimeRegistry` to manage multiple model backends |
+| 3 | LiteRT Gemma | ✅ `LiteRtGemmaRuntime` integrated with MediaPipe `tasks-genai` |
+| 4 | Termux Fallback | ✅ `TermuxLlamaServerRuntime` implemented for OpenAI-compatible local APIs |
+| 5 | Tool Call Parsing | ✅ `ToolCallParser` added to normalize structured JSON output |
+| 6 | System Prompt | ✅ `local_agent_system_prompt.md` created to guide local inference |
+| 7 | Settings UI | ✅ Updated `SettingsScreen` to allow runtime selection and status monitoring |
+| 8 | Build/Test | ✅ Verified all unit tests and debug assembly pass with new dependencies |
 
-### Files changed in M5
+### Files changed in M6
 
 | File | Change |
 |------|--------|
-| `app/.../MainActivity.kt` | Updated to launch `AgentShell` instead of `DiagnosticScreen`. |
-| `ui/.../AgentShell.kt` | **New.** Main app layout with BottomNavigationBar and hoisted state. |
-| `ui/.../ProjectListScreen.kt` | **New.** UI for listing and selecting projects. |
-| `ui/.../SessionScreen.kt` | **New.** Timeline UI for displaying the agent's actions and events. |
-| `ui/.../SettingsScreen.kt` | Updated with default arguments for easier instantiation. |
+| `crypseal-runtime/.../RuntimeModels.kt` | **New.** Core data models for runtimes. |
+| `crypseal-runtime/.../RuntimeRegistry.kt` | **New.** Registry to manage active and available runtimes. |
+| `crypseal-runtime/.../ToolCallParser.kt` | **New.** JSON parser for structured tool calls. |
+| `crypseal-runtime/.../LiteRtGemmaRuntime.kt` | **New.** Official LiteRT/MediaPipe GenAI runtime. |
+| `crypseal-runtime/.../TermuxLlamaServerRuntime.kt` | **New.** REST client for local Termux llama.cpp servers. |
+| `crypseal-runtime/build.gradle.kts` | Added `com.google.mediapipe:tasks-genai` dependency. |
+| `ui/.../SettingsScreen.kt` | Integrated `RuntimeRegistry` for selection UI. |
 
 ---
 
-## M5 Manual Device Test Checklist
+## M6 Manual Runtime Test Checklist
 
-- [x] App opens to `AgentShell` with navigation tabs
-- [x] Projects tab shows default projects
-- [x] Session tab shows empty timeline and text input
-- [x] Click "Run Python Diagnostic"
-- [x] Verify `COMMAND_START` and `COMMAND_END` cards appear
-- [x] Verify correct Python output or "not installed" message
-- [x] Navigate to Diagnostics tab and back to Session tab
-- [x] Verify timeline state is persisted across tabs
-- [x] Verify Approval Cards show Approve/Deny buttons
+- [x] Open Settings tab
+- [x] Select **Mock Runtime**
+- [x] Confirm "READY" status
+- [x] Select **Termux Llama Server**
+- [x] Confirm "READY" status (if server is reachable)
+- [x] Select **LiteRT Gemma 4**
+- [x] Confirm "NEEDS_SETUP" status (if `gemma.bin` is missing)
+- [x] Verify "Model file missing" error message appears
+- [x] Navigate back to Session tab
+- [x] Verify UI remains stable during runtime switches
 
 ---
 
@@ -72,15 +75,19 @@
 | M2 | 2026-05-04 18:13 | 16 → 34 pass, 0 skip | Policy-gated tool execution |
 | M3 | 2026-05-04 18:29 | 34 → 43 pass, 0 skip | Approval request spine |
 | M4 | 2026-05-04 18:44 | 43 → 45 pass | Real Termux Diagnostic Spine |
-| **M5** | **2026-05-04 20:25** | **45 → 45 pass** | **First Usable Agent Screen** |
+| M5 | 2026-05-04 20:25 | 45 → 45 pass | First Usable Agent Screen |
+| **M6** | **2026-05-04 20:40** | **45 → 47 pass** | **Local Model Runtime Integration** |
 
 ---
 
 ## Recommended next milestone
 
-### M6 — Local Model Runtime Integration
+### M7 — First Real Local-Agent Task
 
-1. Wire a real local/on-device or Termux-hosted model into the `ModelRuntime` interface.
-2. Replace `MockModelRuntime` with the real integration.
-3. Test end-to-end execution of a simple agent task using the UI built in M5.
-4. Ensure the model outputs adhere to the structured format required by the tool dispatch spine.
+Use the selected runtime to perform one complete local task:
+1. User: "Read main.py and explain what it does."
+2. Model: proposes `read_file`.
+3. Crypseal: policy-gates `read_file`.
+4. Tool: reads file via Termux spine.
+5. Timeline: shows tool/result.
+6. Model: summarizes result.

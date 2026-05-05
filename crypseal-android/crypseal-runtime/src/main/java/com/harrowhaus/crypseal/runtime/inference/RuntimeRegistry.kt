@@ -9,29 +9,23 @@ import kotlinx.coroutines.flow.asStateFlow
 
 class RuntimeRegistry {
     private val _runtimes = mutableMapOf<String, RuntimeSelection>()
+    private val _runtimeInstances = mutableMapOf<String, ModelRuntime>()
     private val _activeRuntimeId = MutableStateFlow<String?>(null)
 
     val activeRuntimeId: StateFlow<String?> = _activeRuntimeId.asStateFlow()
 
-    init {
-        // Register default Mock runtime
-        register(
-            RuntimeDescriptor(
-                id = "mock",
-                name = "Mock Runtime",
-                type = RuntimeType.MOCK,
-                description = "For testing and development. Uses canned responses."
-            ),
-            RuntimeHealth(RuntimeStatus.READY)
-        )
-    }
-
-    fun register(descriptor: RuntimeDescriptor, health: RuntimeHealth) {
-        _runtimes[descriptor.id] = RuntimeSelection(descriptor, health)
+    fun register(descriptor: RuntimeDescriptor, health: RuntimeHealth, instance: ModelRuntime) {
+        val selection = RuntimeSelection(descriptor, health)
+        _runtimes[descriptor.id] = selection
+        _runtimeInstances[descriptor.id] = instance
+        
         if (_activeRuntimeId.value == null && health.canGenerate) {
             _activeRuntimeId.value = descriptor.id
         }
     }
+
+    fun getRuntime(id: String): ModelRuntime? = _runtimeInstances[id]
+
 
     fun getAvailableRuntimes(): List<RuntimeSelection> {
         return _runtimes.values.toList()
