@@ -8,8 +8,8 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun SettingsScreen(
-    activeRuntime: String,
-    permissionProfile: String
+    activeRuntime: String = "Mock / Default",
+    permissionProfile: String = "ASK / Medium"
 ) {
     Column(modifier = Modifier.padding(16.dp)) {
         Text("Runtime & Policy Settings", style = MaterialTheme.typography.titleLarge)

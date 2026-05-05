@@ -10,7 +10,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import com.harrowhaus.crypseal.shellbridge.TermuxCommandRunner
 import com.harrowhaus.crypseal.shellbridge.TermuxSetupChecker
-import com.harrowhaus.crypseal.ui.screens.DiagnosticScreen
+import com.harrowhaus.crypseal.ui.screens.AgentShell
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -27,7 +27,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    DiagnosticScreen(setupChecker, commandRunner)
+                    AgentShell(setupChecker, commandRunner)
                 }
             }
         }

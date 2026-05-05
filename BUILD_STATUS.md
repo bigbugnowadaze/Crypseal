@@ -1,7 +1,7 @@
 # Crypseal — Build Status
 
-> **Last verified:** 2026-05-04 18:44 CDT
-> **Milestone:** M4 — Real Termux Diagnostic Spine ✅ IN PROGRESS (Code complete, testing needed)
+> **Last verified:** 2026-05-04 20:00 CDT
+> **Milestone:** M5 — First Usable Agent Screen ✅ IN PROGRESS
 > **`./gradlew assembleDebug`:** ✅ PASS (exit 0)
 > **`./gradlew testDebugUnitTest`:** ✅ PASS (exit 0)
 
