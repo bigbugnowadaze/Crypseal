@@ -11,6 +11,14 @@
         android:roundIcon="@android:drawable/sym_def_app_icon"
         android:supportsRtl="true"
         android:theme="@style/Theme.Crypseal">
+        <receiver
+            android:name="com.harrowhaus.crypseal.shellbridge.TermuxResultReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.harrowhaus.crypseal.TERMUX_RESULT" />
+            </intent-filter>
+        </receiver>
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
