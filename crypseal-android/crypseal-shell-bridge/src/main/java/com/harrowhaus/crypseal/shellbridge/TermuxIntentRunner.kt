@@ -25,8 +25,8 @@ class TermuxIntentRunner(private val context: Context) {
             
             val resultIntent = Intent(command.sessionAction).apply {
                 putExtra("command_id", command.id)
-                // Set package explicitly to prevent broadcast leaking
-                setPackage(context.packageName)
+                addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
+                addFlags(0x01000000) // Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND
             }
             
             val flags = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {

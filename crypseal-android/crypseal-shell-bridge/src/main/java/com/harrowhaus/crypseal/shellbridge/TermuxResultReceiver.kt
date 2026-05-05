@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import android.widget.Toast
 import kotlinx.coroutines.CompletableDeferred
 
 class TermuxResultReceiver : BroadcastReceiver() {
@@ -30,7 +31,8 @@ class TermuxResultReceiver : BroadcastReceiver() {
         val stdout = intent.getStringExtra("com.termux.RUN_COMMAND_STDOUT") ?: ""
         val stderr = intent.getStringExtra("com.termux.RUN_COMMAND_STDERR") ?: ""
         
-        Log.d("TermuxResult", "Received result for $commandId: exit=$exitCode")
+        Log.e("TermuxResult", "RECEIVED broadcast for $commandId: exit=$exitCode")
+        Toast.makeText(context, "Crypseal: Received $commandId result", Toast.LENGTH_SHORT).show()
         
         pendingCommands[commandId]?.complete(ResultData(exitCode, stdout, stderr))
     }
