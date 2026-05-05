@@ -15,6 +15,8 @@ import com.harrowhaus.crypseal.shellbridge.TermuxSetupChecker
 
 import com.harrowhaus.crypseal.runtime.gateway.CrypsealEvent
 
+import com.harrowhaus.crypseal.runtime.inference.RuntimeRegistry
+
 enum class ShellRoute(val title: String, val icon: ImageVector) {
     PROJECTS("Projects", Icons.Default.List),
     SESSION("Session", Icons.Default.PlayArrow),
@@ -25,7 +27,8 @@ enum class ShellRoute(val title: String, val icon: ImageVector) {
 @Composable
 fun AgentShell(
     setupChecker: TermuxSetupChecker,
-    commandRunner: TermuxCommandRunner
+    commandRunner: TermuxCommandRunner,
+    runtimeRegistry: RuntimeRegistry
 ) {
     var currentRoute by remember { mutableStateOf(ShellRoute.SESSION) }
     var currentProjectId by remember { mutableStateOf<String?>(null) }
@@ -67,13 +70,14 @@ fun AgentShell(
                     events = sessionEvents,
                     onEventsChanged = { sessionEvents = it },
                     inputMessage = sessionInputMessage,
-                    onInputMessageChanged = { sessionInputMessage = it }
+                    onInputMessageChanged = { sessionInputMessage = it },
+                    runtimeRegistry = runtimeRegistry
                 )
                 ShellRoute.DIAGNOSTICS -> DiagnosticScreen(
                     setupChecker = setupChecker,
                     commandRunner = commandRunner
                 )
-                ShellRoute.SETTINGS -> SettingsScreen()
+                ShellRoute.SETTINGS -> SettingsScreen(runtimeRegistry = runtimeRegistry)
             }
         }
     }
