@@ -64,6 +64,45 @@
 - [x] Navigate back to Session tab
 - [x] Verify UI remains stable during runtime switches
 
+## M7 — First Real Local-Agent Task ✅ COMPLETE
+
+### What changed
+
+| # | Task | Status |
+|---|------|--------|
+| 1 | Sample Project | ✅ `SampleProjectManager` creates a real `main.py` on disk |
+| 2 | Agent Loop UI | ✅ Added "M7 Task" button to `SessionScreen` |
+| 3 | Loop Implementation | ✅ `AgentOrchestrator` runs multi-step Act loop |
+| 4 | System Prompt | ✅ Robust system prompt loaded from markdown resources |
+| 5 | Tool Continuation | ✅ `ContextBuilder` correctly handles tool observations |
+| 6 | Robust Parsing | ✅ `ToolCallParser` handles conversational text around JSON |
+| 7 | Integration Tests | ✅ `M7OrchestrationTest` verifies the full loop |
+
+### Files changed in M7
+
+| File | Change |
+|------|--------|
+| `crypseal-runtime/.../SampleProjectManager.kt` | **New.** Creates sample projects for testing. |
+| `crypseal-runtime/.../M7OrchestrationTest.kt` | **New.** Integration test for the full agent loop. |
+| `ui/.../SessionScreen.kt` | Implemented the real agent loop trigger and timeline. |
+| `crypseal-runtime/.../ToolCallParser.kt` | Added regex-style JSON extraction. |
+| `crypseal-runtime/.../ContextBuilder.kt` | Added resource-based system prompt loading. |
+
+---
+
+## M7 Manual Runtime Test Checklist
+
+- [x] Open Crypseal
+- [x] Select runtime in Settings (Mock or Termux)
+- [x] Confirm runtime status READY
+- [x] Go to Projects, select **M7Sample**
+- [x] Confirm `main.py` exists (in session timeline)
+- [x] Click **"Run"** on M7 Task card
+- [x] Confirm model emits `read_file` tool call (appears in timeline)
+- [x] Confirm policy/tool card shows file content
+- [x] Confirm model gives final explanation of `main.py`
+- [x] **Verified with:** `MockModelRuntime` (Unit Tests) & `TermuxLlamaServerRuntime` (Manual)
+
 ---
 
 ## Milestone history
@@ -76,18 +115,14 @@
 | M3 | 2026-05-04 18:29 | 34 → 43 pass, 0 skip | Approval request spine |
 | M4 | 2026-05-04 18:44 | 43 → 45 pass | Real Termux Diagnostic Spine |
 | M5 | 2026-05-04 20:25 | 45 → 45 pass | First Usable Agent Screen |
-| **M6** | **2026-05-04 20:40** | **45 → 47 pass** | **Local Model Runtime Integration** |
+| M6 | 2026-05-04 20:40 | 45 → 47 pass | Local Model Runtime Integration |
+| **M7** | **2026-05-04 21:10** | **47 → 50 pass** | **First Real Local-Agent Task** |
 
 ---
 
 ## Recommended next milestone
 
-### M7 — First Real Local-Agent Task
+### M8 — First Real Edit Task
 
-Use the selected runtime to perform one complete local task:
-1. User: "Read main.py and explain what it does."
-2. Model: proposes `read_file`.
-3. Crypseal: policy-gates `read_file`.
-4. Tool: reads file via Termux spine.
-5. Timeline: shows tool/result.
-6. Model: summarizes result.
+Target task: "Change main.py so it greets 'Android' instead of 'Crypseal', show me the diff, ask for approval, apply the patch, then run it."
+This will prove the full mutation loop (Plan -> Propose Patch -> Diff -> Approve -> Apply -> Run).

@@ -14,8 +14,9 @@ import com.harrowhaus.crypseal.shellbridge.TermuxCommandRunner
 import com.harrowhaus.crypseal.shellbridge.TermuxSetupChecker
 
 import com.harrowhaus.crypseal.runtime.gateway.CrypsealEvent
-
 import com.harrowhaus.crypseal.runtime.inference.RuntimeRegistry
+import com.harrowhaus.crypseal.runtime.projects.SampleProjectManager
+import java.io.File
 
 enum class ShellRoute(val title: String, val icon: ImageVector) {
     PROJECTS("Projects", Icons.Default.List),
@@ -28,10 +29,11 @@ enum class ShellRoute(val title: String, val icon: ImageVector) {
 fun AgentShell(
     setupChecker: TermuxSetupChecker,
     commandRunner: TermuxCommandRunner,
-    runtimeRegistry: RuntimeRegistry
+    runtimeRegistry: RuntimeRegistry,
+    baseDir: File
 ) {
     var currentRoute by remember { mutableStateOf(ShellRoute.SESSION) }
-    var currentProjectId by remember { mutableStateOf<String?>(null) }
+    var currentProjectPath by remember { mutableStateOf<String?>(null) }
     
     // Hoist session state to persist across tab navigation
     var sessionEvents by remember { mutableStateOf(listOf<CrypsealEvent>()) }
@@ -59,13 +61,14 @@ fun AgentShell(
         ) {
             when (currentRoute) {
                 ShellRoute.PROJECTS -> ProjectListScreen(
-                    onProjectSelected = { id ->
-                        currentProjectId = id
+                    baseDir = baseDir,
+                    onProjectSelected = { path ->
+                        currentProjectPath = path
                         currentRoute = ShellRoute.SESSION
                     }
                 )
                 ShellRoute.SESSION -> SessionScreen(
-                    projectId = currentProjectId,
+                    projectPath = currentProjectPath,
                     commandRunner = commandRunner,
                     events = sessionEvents,
                     onEventsChanged = { sessionEvents = it },

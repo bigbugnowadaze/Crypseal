@@ -49,6 +49,25 @@ class ToolCallParserTest {
     }
 
     @Test
+    fun `parse tool call with surrounding text`() {
+        val raw = """
+            I'll check the file now.
+            {
+                "tool": "read_file",
+                "args": {
+                    "path": "main.py"
+                }
+            }
+            Let me know if you need anything else.
+        """.trimIndent()
+        
+        val response = ToolCallParser.parse(raw)
+        assertFalse(response.isMalformed)
+        assertEquals("read_file", response.toolCallName)
+        assertTrue(response.text.contains("I'll check the file now."))
+    }
+
+    @Test
     fun `parse malformed json returns isMalformed true`() {
         val json = """
             {

@@ -16,13 +16,18 @@ object ToolCallParser {
     fun parse(rawText: String): ModelResponse {
         val trimmed = rawText.trim()
         
-        // If it doesn't look like JSON at all, treat it as normal text
-        if (!trimmed.startsWith("{") || !trimmed.endsWith("}")) {
+        // Try to find a JSON block starting with { and ending with }
+        val startIndex = trimmed.indexOf("{")
+        val endIndex = trimmed.lastIndexOf("}")
+        
+        if (startIndex == -1 || endIndex == -1 || endIndex <= startIndex) {
             return ModelResponse(text = rawText)
         }
 
+        val jsonCandidate = trimmed.substring(startIndex, endIndex + 1)
+
         return try {
-            val json = JSONObject(trimmed)
+            val json = JSONObject(jsonCandidate)
             
             // Try different known schemas
             val toolName = json.optString("tool", null) ?: json.optString("name", null)
@@ -36,14 +41,13 @@ object ToolCallParser {
                     toolCallArgsJson = argsObj.toString()
                 )
             } else {
-                // Looks like JSON but doesn't match our tool schema
+                // Contains JSON but not a tool call we recognize
                 ModelResponse(
-                    text = rawText,
-                    isMalformed = true
+                    text = rawText
                 )
             }
         } catch (e: JSONException) {
-            // Malformed JSON
+            // Malformed JSON block
             ModelResponse(
                 text = rawText,
                 isMalformed = true

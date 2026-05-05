@@ -12,13 +12,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
+import com.harrowhaus.crypseal.runtime.projects.SampleProjectManager
+import java.io.File
+
 @Composable
 fun ProjectListScreen(
+    baseDir: File,
     onProjectSelected: (String) -> Unit
 ) {
-    // In M5, we can use an app-private list or a safe Termux default path.
-    // For now, let's show a minimal stateful list.
-    var projects by remember { mutableStateOf(listOf("Termux Local", "Diagnostic Target")) }
+    val sampleProject = remember { SampleProjectManager.setupSampleProject(baseDir) }
+    var projects by remember { mutableStateOf(listOf(sampleProject.absolutePath)) }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Row(
@@ -48,8 +51,8 @@ fun ProjectListScreen(
                         )
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            Text(project, style = MaterialTheme.typography.titleMedium)
-                            Text("Path: /data/data/com.termux/files/home/$project", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(File(project).name, style = MaterialTheme.typography.titleMedium)
+                            Text("Path: $project", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }

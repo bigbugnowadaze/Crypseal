@@ -7,6 +7,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.harrowhaus.crypseal.runtime.gateway.CrypsealEvent
@@ -16,10 +17,16 @@ import com.harrowhaus.crypseal.runtime.inference.RuntimeRegistry
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
+import com.harrowhaus.crypseal.runtime.gateway.*
+import com.harrowhaus.crypseal.runtime.context.*
+import com.harrowhaus.crypseal.runtime.tools.*
+import com.harrowhaus.crypseal.runtime.models.ModelOutputRepair
+import java.io.File
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SessionScreen(
-    projectId: String?,
+    projectPath: String?,
     commandRunner: TermuxCommandRunner,
     events: List<CrypsealEvent>,
     onEventsChanged: (List<CrypsealEvent>) -> Unit,
@@ -28,10 +35,11 @@ fun SessionScreen(
     runtimeRegistry: RuntimeRegistry
 ) {
     val scope = rememberCoroutineScope()
-    val sessionId = projectId ?: "active_session"
+    val sessionId = projectPath ?: "active_session"
+    val projectRoot = projectPath?.let { File(it) }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        TopAppBar(title = { Text(projectId ?: "No Project Selected") })
+        TopAppBar(title = { Text(projectRoot?.name ?: "No Project Selected") })
         
         // Timeline
         LazyColumn(
@@ -46,59 +54,45 @@ fun SessionScreen(
             }
         }
         
-        // Guided Flow: Run Python Diagnostic
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
+        // M7 Real Agent Task Button
+        if (projectRoot != null) {
+            Card(
+                modifier = Modifier.fillMaxWidth().padding(8.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
             ) {
-                Column {
-                    Text("Guided Flow", style = MaterialTheme.typography.labelSmall)
-                    Text("Run Python Diagnostic", style = MaterialTheme.typography.titleMedium)
-                }
-                Button(onClick = {
-                    scope.launch {
-                        var currentEvents = events
-                        currentEvents = currentEvents + CrypsealEvent(sessionId = sessionId, type = EventType.USER_MESSAGE, payload = "Run Python Diagnostic")
-                        currentEvents = currentEvents + CrypsealEvent(sessionId = sessionId, type = EventType.COMMAND_START, payload = "{\"command\":\"python --version\"}")
-                        onEventsChanged(currentEvents)
-                        
-                        val result = commandRunner.run("python --version")
-                        
-                        val payload = JSONObject().apply {
-                            put("exitCode", result.exitCode)
-                            put("stdout", result.stdout)
-                            put("stderr", result.stderr)
-                        }.toString()
-                        
-                        currentEvents = currentEvents + CrypsealEvent(sessionId = sessionId, type = EventType.COMMAND_END, payload = payload)
-                        
-                        if (result.exitCode != 0) {
-                            currentEvents = currentEvents + CrypsealEvent(
-                                sessionId = sessionId, 
-                                type = EventType.AGENT_MESSAGE, 
-                                payload = "Python is not installed in Termux yet. Open Termux and run: pkg install python"
-                            )
-                        } else {
-                            currentEvents = currentEvents + CrypsealEvent(
-                                sessionId = sessionId, 
-                                type = EventType.AGENT_MESSAGE, 
-                                payload = "Python is successfully installed and verified."
-                            )
-                        }
-                        onEventsChanged(currentEvents)
+                Row(modifier = Modifier.padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("M7 Task", style = MaterialTheme.typography.labelSmall)
+                        Text("Read main.py and explain", style = MaterialTheme.typography.titleMedium)
                     }
-                }) {
-                    Icon(Icons.Default.PlayArrow, contentDescription = null)
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Run")
+                    Button(onClick = {
+                        scope.launch {
+                            val activeId = runtimeRegistry.activeRuntimeId.value ?: return@launch
+                            val model = runtimeRegistry.getRuntime(activeId) ?: return@launch
+                            
+                            val toolRegistry = ToolRegistry().apply {
+                                register(FileReadTool(projectRoot))
+                            }
+                            
+                            val orchestrator = AgentOrchestrator(
+                                model = model,
+                                toolRegistry = toolRegistry,
+                                contextBuilder = ContextBuilder(projectRoot, Compactor()),
+                                outputRepair = ModelOutputRepair(),
+                                failureDetector = FailureDetector(),
+                                projectRoot = projectRoot
+                            )
+                            
+                            val currentEvents = events.toMutableList()
+                            currentEvents.add(CrypsealEvent(sessionId = sessionId, type = EventType.USER_MESSAGE, payload = "Read main.py and explain what it does."))
+                            onEventsChanged(currentEvents.toList())
+                            
+                            orchestrator.runActLoop(currentEvents, maxSteps = 3)
+                            onEventsChanged(currentEvents.toList())
+                        }
+                    }) {
+                        Text("Run")
+                    }
                 }
             }
         }

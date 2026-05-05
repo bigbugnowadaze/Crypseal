@@ -58,7 +58,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    AgentShell(setupChecker, commandRunner, runtimeRegistry)
+                    AgentShell(setupChecker, commandRunner, runtimeRegistry, filesDir)
                 }
             }
         }
