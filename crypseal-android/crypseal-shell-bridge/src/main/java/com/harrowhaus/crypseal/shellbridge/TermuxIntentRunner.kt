@@ -24,6 +24,7 @@ class TermuxIntentRunner(private val context: Context) {
             putExtra("com.termux.RUN_COMMAND_BACKGROUND", command.background)
             
             val resultIntent = Intent(command.sessionAction).apply {
+                setClassName(context.packageName, "com.harrowhaus.crypseal.shellbridge.TermuxResultReceiver")
                 putExtra("command_id", command.id)
                 addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
                 addFlags(0x01000000) // Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND
