@@ -11,7 +11,7 @@ import java.util.UUID
 
 class TermuxCommandRunner(
     private val context: Context,
-    private val defaultWorkdir: String = "/data/data/com.termux/files/home/crypseal/projects/diagnostic",
+    private val defaultWorkdir: String = "/data/data/com.termux/files/home",
     private val onEvent: ((EventType, String) -> Unit)? = null
 ) : CommandRunner {
 
@@ -45,15 +45,10 @@ class TermuxCommandRunner(
 
         try {
             // Build TermuxCommand
-            // We assume the first word is the executable and the rest are args
-            val parts = command.trim().split(Regex("\\s+"))
-            val executable = parts[0]
-            val args = if (parts.size > 1) parts.subList(1, parts.size).toTypedArray() else arrayOf()
-
             val termuxCmd = TermuxCommand(
                 id = commandId,
-                executable = executable,
-                args = args,
+                executable = "/data/data/com.termux/files/usr/bin/bash",
+                args = arrayOf("-c", command),
                 workdir = defaultWorkdir,
                 background = true, // We want stdout/stderr via PendingIntent
                 sessionAction = action
