@@ -18,13 +18,14 @@ import org.json.JSONObject
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SessionScreen(
-
     projectId: String?,
-    commandRunner: TermuxCommandRunner
+    commandRunner: TermuxCommandRunner,
+    events: List<CrypsealEvent>,
+    onEventsChanged: (List<CrypsealEvent>) -> Unit,
+    inputMessage: String,
+    onInputMessageChanged: (String) -> Unit
 ) {
     val scope = rememberCoroutineScope()
-    var events by remember { mutableStateOf(listOf<CrypsealEvent>()) }
-    var inputMessage by remember { mutableStateOf("") }
     val sessionId = projectId ?: "active_session"
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -38,7 +39,7 @@ fun SessionScreen(
         ) {
             items(events) { event ->
                 EventCard(event) { newEvent ->
-                    events = events + newEvent
+                    onEventsChanged(events + newEvent)
                 }
             }
         }
@@ -62,8 +63,10 @@ fun SessionScreen(
                 }
                 Button(onClick = {
                     scope.launch {
-                        events = events + CrypsealEvent(sessionId = sessionId, type = EventType.USER_MESSAGE, payload = "Run Python Diagnostic")
-                        events = events + CrypsealEvent(sessionId = sessionId, type = EventType.COMMAND_START, payload = "{\"command\":\"python --version\"}")
+                        var currentEvents = events
+                        currentEvents = currentEvents + CrypsealEvent(sessionId = sessionId, type = EventType.USER_MESSAGE, payload = "Run Python Diagnostic")
+                        currentEvents = currentEvents + CrypsealEvent(sessionId = sessionId, type = EventType.COMMAND_START, payload = "{\"command\":\"python --version\"}")
+                        onEventsChanged(currentEvents)
                         
                         val result = commandRunner.run("python --version")
                         
@@ -73,21 +76,22 @@ fun SessionScreen(
                             put("stderr", result.stderr)
                         }.toString()
                         
-                        events = events + CrypsealEvent(sessionId = sessionId, type = EventType.COMMAND_END, payload = payload)
+                        currentEvents = currentEvents + CrypsealEvent(sessionId = sessionId, type = EventType.COMMAND_END, payload = payload)
                         
                         if (result.exitCode != 0) {
-                            events = events + CrypsealEvent(
+                            currentEvents = currentEvents + CrypsealEvent(
                                 sessionId = sessionId, 
                                 type = EventType.AGENT_MESSAGE, 
                                 payload = "Python is not installed in Termux yet. Open Termux and run: pkg install python"
                             )
                         } else {
-                            events = events + CrypsealEvent(
+                            currentEvents = currentEvents + CrypsealEvent(
                                 sessionId = sessionId, 
                                 type = EventType.AGENT_MESSAGE, 
                                 payload = "Python is successfully installed and verified."
                             )
                         }
+                        onEventsChanged(currentEvents)
                     }
                 }) {
                     Icon(Icons.Default.PlayArrow, contentDescription = null)
@@ -101,19 +105,19 @@ fun SessionScreen(
         Row(modifier = Modifier.padding(8.dp).fillMaxWidth()) {
             OutlinedTextField(
                 value = inputMessage,
-                onValueChange = { inputMessage = it },
+                onValueChange = { onInputMessageChanged(it) },
                 modifier = Modifier.weight(1f),
                 placeholder = { Text("Message Agent...") }
             )
             Spacer(modifier = Modifier.width(8.dp))
             Button(onClick = {
                 if (inputMessage.isNotBlank()) {
-                    events = events + CrypsealEvent(
+                    onEventsChanged(events + CrypsealEvent(
                         sessionId = sessionId,
                         type = EventType.USER_MESSAGE,
                         payload = inputMessage
-                    )
-                    inputMessage = ""
+                    ))
+                    onInputMessageChanged("")
                 }
             }) {
                 Text("Send")

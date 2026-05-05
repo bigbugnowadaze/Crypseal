@@ -13,6 +13,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import com.harrowhaus.crypseal.shellbridge.TermuxCommandRunner
 import com.harrowhaus.crypseal.shellbridge.TermuxSetupChecker
 
+import com.harrowhaus.crypseal.runtime.gateway.CrypsealEvent
+
 enum class ShellRoute(val title: String, val icon: ImageVector) {
     PROJECTS("Projects", Icons.Default.List),
     SESSION("Session", Icons.Default.PlayArrow),
@@ -27,6 +29,10 @@ fun AgentShell(
 ) {
     var currentRoute by remember { mutableStateOf(ShellRoute.SESSION) }
     var currentProjectId by remember { mutableStateOf<String?>(null) }
+    
+    // Hoist session state to persist across tab navigation
+    var sessionEvents by remember { mutableStateOf(listOf<CrypsealEvent>()) }
+    var sessionInputMessage by remember { mutableStateOf("") }
 
     Scaffold(
         bottomBar = {
@@ -57,7 +63,11 @@ fun AgentShell(
                 )
                 ShellRoute.SESSION -> SessionScreen(
                     projectId = currentProjectId,
-                    commandRunner = commandRunner
+                    commandRunner = commandRunner,
+                    events = sessionEvents,
+                    onEventsChanged = { sessionEvents = it },
+                    inputMessage = sessionInputMessage,
+                    onInputMessageChanged = { sessionInputMessage = it }
                 )
                 ShellRoute.DIAGNOSTICS -> DiagnosticScreen(
                     setupChecker = setupChecker,
